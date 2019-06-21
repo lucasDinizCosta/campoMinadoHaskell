@@ -16,23 +16,30 @@ import Graphics.UI.Gtk
 --data cell 
 
 --matrix:: Int
+-- Compila a janela com o nome de Hello: ghc --make codigo.hs -o hello
 
 
 main :: IO ()
 main = do
   initGUI
 
-  -- Create a new window
+  -- Cria uma nova janela
   window <- windowNew
 
-  -- Here we connect the "destroy" event to a signal handler.
-  -- This event occurs when we call widgetDestroy on the window,
-  -- or if the user closes the window.
+  -- Conecta ao evento de "destruição" da janela.
+  -- O evento ocorre quando é chamado o "widgetDestroy" na janela,
+  -- ou seo usuário fecha a janela.
+
   window `onDestroy` mainQuit
 
-  -- Sets the border width of the window.
-  set window [ containerBorderWidth := 10 ]
+  -- Define os parametros da janela
+  set window [ windowDefaultWidth := 300, windowDefaultHeight := 300,
+               windowTitle := "Campo minado", containerBorderWidth := 20]
 
+  window `on` focus $ \dirtype -> putStrLn "Janela criada!" >> return False
+
+
+  -- Cria um agrupamento de botões
   hbuttonbox <- hButtonBoxNew
 
   set window [ containerChild := hbuttonbox ]
@@ -40,6 +47,8 @@ main = do
   button1 <- buttonNewWithLabel "One"
   button2 <- buttonNewWithLabel "Two"
   button3 <- buttonNewWithLabel "Three"
+
+  onClicked button1 (putStrLn "Teste!")  -- Atribuindo função a um botão
 
   -- Add each button to the button box with the default packing and padding
   set hbuttonbox [ containerChild := button

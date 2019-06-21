@@ -1,4 +1,5 @@
 import Data.Array
+--import Data.Matrix
 
 --  Trabalhando com vetores:
 --	Um array de 1 linha e 4 coluna
@@ -38,11 +39,12 @@ is_empty _ = False
 
 --  Definindo novos tipos de dados
 -- Especifica o construtor do tipo de dado através do type
+-- Aluno e Programador são construtores de valor
 type Nome = String
 type Linguagem = String
 type Universidade = String
 data Pessoa = Programador Nome Linguagem | Aluno Nome Universidade   -- Dois construtores: Tipo aluno e programador
-                   deriving(Show)
+                   deriving(Show)  -- Herda as funções de de show
 
 programador = Programador "Lucas" "Haskell"
 aluno = Aluno "Lucas" "UFJF"
@@ -208,3 +210,70 @@ quad :: Int -> Int
 quad n = quad_n
 			where
 				quad_n = n * n
+
+
+
+--	Loops de repetição
+
+--	Método 1
+
+repeatNTimes 0 _ = return ()
+repeatNTimes n action =
+ do
+  action
+  repeatNTimes (n-1) action
+
+-- Método 2 - Imprimindo texto
+
+printStringNTimes 0 = return ()
+printStringNTimes n =
+ do
+  putStrLn "a string"
+  printStringNTimes (n-1)
+
+--	Implentação do quicksort
+
+qsort [] = []
+qsort (x:xs) = qsort esq_x ++ [x] ++ qsort dir_x
+			where
+				esq_x = [y | y <- xs, y <  x]
+				dir_x = [y | y <- xs, y >= x]
+
+--	funções de entrada
+{-
+	Funções de escrita no console:
+
+	putChar 'A' => A 									-- Não quebra a linha
+	putStr "Aprendendo Haskell"   => Aprendendo Haskell -- Não quebra a linha
+	putStrLn "Aprendendo Haskell" => Aprendendo Haskell -- Quebra a linha
+	print "Aprendendo Haskell"    => Aprendendo Haskell -- é da classe genérica show e possui quebra de linha
+
+	Funções de leitura de dados escritos no console:
+
+	getChar => Lê um caractere da entrada padrão(Teclado)
+	getLine => Lê uma entrada e converte pra String
+	read :: Read a => String -> a
+	read => Lê uma String e converte pra um tipo especifico 'a'
+
+	EXEMPLOS DE APLICAÇÃO:
+-}
+
+
+
+get_char :: IO ()
+get_char = do
+				putStr "Digite um caractere: "
+				c <- getChar
+				putStr "\nO caractere digitado foi: "
+				putChar c
+				putChar '\n'
+
+somar_numeros :: IO Int
+somar_numeros = do
+					putStr "Digite o primeiro numero: "
+					linha1 <- getLine
+					putStr "Digite o segundo numero: "
+					linha2 <- getLine
+					return ((read linha1 :: Int) + (read linha2 :: Int))
+
+
