@@ -277,3 +277,10 @@ somar_numeros = do
 					return ((read linha1 :: Int) + (read linha2 :: Int))
 
 
+--		VARIAVEIS LOCAIS
+checkNumber :: Int -> IO ()
+checkNumber num = 	let magicNumber = 42
+					in if num == magicNumber
+						then putStrLn "Acertou !"
+						else putStrLn "Que pena, vc errou...;("
+
