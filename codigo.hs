@@ -206,25 +206,26 @@ prepararJogo = do
                linhas <- getLine
                putStr "Digite o numero de colunas: "
                colunas <- getLine
-               putStr "Digite o numero de minas: "
-               minas <- getLine
                putStrLn (linhas++" "++colunas++"\n")
-               minas <- (tratarMinas(read (linhas):: Int) (read(colunas):: Int) (read(minas):: Int))
+               minas <- (tratarMinas(read (linhas):: Int) (read(colunas):: Int))
                putStrLn (linhas++" "++colunas++" "++(show(minas))++"\n")
             
 --if (read(minas):: Int) > (floor((read linhas :: Int) * (read colunas :: Int)/2))
 --then
 -- let minas = (floor((read linhas :: Int) * (read colunas :: Int)/2))
 
-tratarMinas:: Int -> Int -> Int-> IO Int
-tratarMinas x y z = do
-                  let aux = fromIntegral((x * y) `div` 2)  -- funcao temporaria que pega a parte inteira
-                  if(z > aux) then do
-                        return(aux)
-                  else if(z < 1) then do
-                        return(100)
-                  else return(z)
+tratarMinas:: Int -> Int -> IO Int
+tratarMinas x y = do
+                  let maxMinas = fromIntegral((x * y) `div` 2)  -- funcao temporaria que pega a parte inteira e controla o maximo de minas que pode ter no cenário
+                  putStr("Digite o numero de minas entre (1 - "++show(maxMinas)++"): ")
+                  minas <- getLine
+                  let auxMinas = (read(minas):: Int)
+                  if(auxMinas > maxMinas) then do
+                        return(maxMinas)
+                  else if(auxMinas < 1) then do
+                        return(1)
+                  else return(auxMinas)
                   
 
-
+--minas = (read(minas):: Int)
                   
