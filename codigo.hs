@@ -211,16 +211,66 @@ prepararJogo = do
                putStrLn (linhas ++ " " ++ colunas ++ "\n")
                minas <- (tratarMinas(read (linhas):: Int) (read(colunas):: Int))
                putStrLn (linhas ++ " " ++ colunas ++ " " ++ (show(minas)) ++ "\n")
-               montarMapa (read (linhas):: Int) (read (colunas):: Int) minas
+               campoMinado <- montarMapa (read (linhas):: Int) (read (colunas):: Int) minas
+               --printMapa (read (linhas):: Int) (read (colunas):: Int) (read (minas):: Int) campoMinado
                putStr ""   -- Se tirar causa erro de identação
                
 
 montarMapa:: Int -> Int -> Int -> IO [Celula]
 montarMapa x y z = do
-                   putStrLn "Teste"
+                   putStrLn "montar Mapa:"
                    let mapa = [(Celula "*" r c False False False 0) | r <- [0..(x - 1)] , c <- [0..(y - 1)]]--let mapa = [(Celula "*" x y False False False 0)];
-                   putStrLn "Teste"
-                   return(mapa)   -- Retornando uma lista de células
+                   printMapa x y z mapa
+                   return(mapa)   -- Retornando uma lista de célula
+
+printMapa:: Int -> Int -> Int -> [Celula] -> IO()
+printMapa x y z mapa = do
+                       putStrLn "Imprimindo mapa:"
+                       putStrLn "\n--------------------------------------------------------------------------\n"
+                       forLoopPrintMapa(0, (x*y), x, y, 0, mapa)
+                       putStrLn "\n--------------------------------------------------------------------------\n"
+
+
+
+forLoopPrintMapa :: (Int, Int, Int, Int, Int, [Celula]) -> IO()
+forLoopPrintMapa(i, tamanho, lins, cols, opcao, ((Celula escrito idLinha idColuna _ _ _ _):ms)) =
+      if(opcao == 0)--Imprime os titulos das colunas
+        then do
+          if(i == 0) 
+            then do
+               putStr ("\t")
+               putStr ("A")
+               forLoopPrintMapa((i + 1), tamanho, lins, cols, opcao, ms)
+            else
+              if(i < lins)
+                then do
+                  putStr (" + "++[(chr(ord ('A') + i))])  --Coloca o caractere corespondente a coluna
+                  forLoopPrintMapa((i + 1), tamanho, lins, cols, opcao, ms)
+                  --print escrito
+              else
+                  putStrLn ("\n")
+                  --forLoopPrintMapa(0, tamanho, lins, cols, 1, ms)
+                  --print "Teste"
+                  --forLoopPrintMapa (i + 1) tamanho lins cols 1 ((Celula escrito idLinha idColuna _ _ _ _):ms )
+        else
+          print "Teste"--valor
+
+{-         if(opcao == 1)--Imprime o restante do mapa
+          then do 
+               if(i < tamanho)
+                  then do
+                     forLoopPrintMapa (i + 1) tamanho lins cols ms
+                  else
+                     print "Teste"--valor
+          else print "Teste"--valor
+-}
+
+
+forLoop :: Int -> Int -> Int -> Int
+forLoop i tamanho valor =
+      if i < tamanho
+           then forLoop (i + 1) tamanho (3 + valor)
+           else valor
 
 -- Trata a quantidade de minas informada pelo jogador
 tratarMinas:: Int -> Int -> IO Int
