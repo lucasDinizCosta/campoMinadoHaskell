@@ -15,6 +15,7 @@ import Data.List
 import System.IO
 import System.Random
 import System.IO.Unsafe
+import Data.Char               --Algumas funções interessantes de caracteres
 {-  
   Trabalhando com matrizes:
 
@@ -62,14 +63,15 @@ removeIndiceLista n x = (delete (x!!n) x)
 
 -- definição dos tipos dos dados
 
-type CampoMinado = [Celula]
+--type CampoMinado = [Celula]
 type IdLinha = Int
 type IdColuna = Int
 type Fechado = Bool     -- Contrasta os vizinhos e não pode mais ser visitado
 type Mina = Bool        -- A celula possui mina
 type Estado = Bool      -- False => não tem mina marcada pelo jogador, True => tem minha marcada pelo jogador
 type Vizinho = Int      -- Quantidade de vizinhos com minas
-data Celula = Celula IdLinha IdColuna Fechado Mina Estado Vizinho
+type Escrito = String   -- Escrito da celula que mostra o estado dela, por padrão é '*'
+data Celula = Celula Escrito IdLinha IdColuna Fechado Mina Estado Vizinho
                               deriving(Show, Eq)
 
 {-
@@ -206,18 +208,25 @@ prepararJogo = do
                linhas <- getLine
                putStr "Digite o numero de colunas: "
                colunas <- getLine
-               putStrLn (linhas++" "++colunas++"\n")
+               putStrLn (linhas ++ " " ++ colunas ++ "\n")
                minas <- (tratarMinas(read (linhas):: Int) (read(colunas):: Int))
-               putStrLn (linhas++" "++colunas++" "++(show(minas))++"\n")
-            
---if (read(minas):: Int) > (floor((read linhas :: Int) * (read colunas :: Int)/2))
---then
--- let minas = (floor((read linhas :: Int) * (read colunas :: Int)/2))
+               putStrLn (linhas ++ " " ++ colunas ++ " " ++ (show(minas)) ++ "\n")
+               montarMapa (read (linhas):: Int) (read (colunas):: Int) minas
+               putStr ""   -- Se tirar causa erro de identação
+               
 
+montarMapa:: Int -> Int -> Int -> IO [Celula]
+montarMapa x y z = do
+                   putStrLn "Teste"
+                   let mapa = [(Celula "*" r c False False False 0) | r <- [0..(x - 1)] , c <- [0..(y - 1)]]--let mapa = [(Celula "*" x y False False False 0)];
+                   putStrLn "Teste"
+                   return(mapa)   -- Retornando uma lista de células
+
+-- Trata a quantidade de minas informada pelo jogador
 tratarMinas:: Int -> Int -> IO Int
 tratarMinas x y = do
                   let maxMinas = fromIntegral((x * y) `div` 2)  -- funcao temporaria que pega a parte inteira e controla o maximo de minas que pode ter no cenário
-                  putStr("Digite o numero de minas entre (1 - "++show(maxMinas)++"): ")
+                  putStr("Digite o numero de minas entre (1 - " ++ show(maxMinas) ++ "): ")
                   minas <- getLine
                   let auxMinas = (read(minas):: Int)
                   if(auxMinas > maxMinas) then do
