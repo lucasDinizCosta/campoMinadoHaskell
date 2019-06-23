@@ -23,6 +23,8 @@ mat = array ((1,1),(2,3)) [((1,1),4), ((1,2),0), ((1,3),3),((2,1),5), ((2,2),1),
 --teste = array ((1,1),(2,2))
 linhas = 2
 colunas = 2
+limiteLinha = 0
+limiteColuna = 0
 --main :: _ -> Array(a,a) b
 geraMatrizZeros = do
 		print (linhas)
@@ -31,7 +33,10 @@ geraMatrizZeros = do
 		putStr "Digite o numero de colunas: "
 		colunas <- getLine
 		putStrLn (linhas++" "++colunas++"\n")
-		return( array ((0,0),(((read linhas :: Int) - 1), ((read colunas :: Int) - 1))) [((i,j), 0) | (i, j) <- range ((0,0),(((read linhas :: Int) - 1), ((read colunas :: Int) - 1)))])
+		--return( array ((0,0),(((read linhas :: Int) - 1), ((read colunas :: Int) - 1))) [((i,j), 0) | (i, j) <- range ((0,0),(((read linhas :: Int) - 1), ((read colunas :: Int) - 1)))])
+		limiteLinha <- ((read linhas :: Int) - 1)
+    	limiteColuna <- ((read colunas :: Int) - 1)
+    	--return( array ((0,0),(limiteLinha, limiteColuna)) [((i,j), 0) | (i, j) <- range ((0,0), (limiteLinha, limiteColuna))])
 
 geraMatriz = do
 		print (linhas)

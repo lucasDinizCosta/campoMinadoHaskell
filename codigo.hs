@@ -52,7 +52,7 @@ import System.IO.Unsafe
 -}
 --get_matrix = array ((1,1), (2,2)) [((1,1),'A'),((1,2),'B'),((2,1),'C'),((2,2),'D')]
 
-numeroMinas = 8
+minas = 8
 linhas = 4
 colunas = 4
 listaTeste = [1..10]
@@ -60,8 +60,20 @@ listaTeste = [1..10]
 --removeIndiceLista :: Int -> [Int] -> [Int]
 removeIndiceLista n x = (delete (x!!n) x)
 
+-- definição dos tipos dos dados
+
+type CampoMinado = [Celula]
+type IdLinha = Int
+type IdColuna = Int
+type Fechado = Bool     -- Contrasta os vizinhos e não pode mais ser visitado
+type Mina = Bool        -- A celula possui mina
+type Estado = Bool      -- False => não tem mina marcada pelo jogador, True => tem minha marcada pelo jogador
+type Vizinho = Int      -- Quantidade de vizinhos com minas
+data Celula = Celula IdLinha IdColuna Fechado Mina Estado Vizinho
+                              deriving(Show, Eq)
+
 {-
-    FUNÇÕES AUXILIARES DE EMBARALHAMENTO E ALEATOREIDADE
+    FUNÇÕES AUXILIARES DE EMBARALHAMENTO E ALEATORIEDADE
 -}
 
 numAleatorio:: Int -> Int -> IO(Int)
@@ -91,6 +103,7 @@ getElementoAleatorioLista lis = (listaEmbaralhada(lis))!!0
 -}
 muda_valor :: Int -> Int
 muda_valor x = x + 1
+
 
 teste :: IO ()
 teste = do
@@ -180,4 +193,38 @@ geraMatriz = do
     linhas <- getLine
     putStr "Digite o numero de colunas: "
     colunas <- getLine
-    putStrLn (linhas ++ " " ++ colunas ++ "\n")
+    putStrLn (linhas++" "++colunas++"\n")
+    --limiteLinha <- ((read linhas :: Int) - 1)
+    --limiteColuna <- ((read colunas :: Int) - 1)
+    --return( array ((0,0),(limiteLinha, limiteColuna)) [((i,j), 0) | (i, j) <- range ((0,0), (limiteLinha, limiteColuna))])
+
+-- função que prepara o início do jogo
+--prepararJogo :: Jogadores -> IO Jogadores
+prepararJogo:: IO()
+prepararJogo = do
+               putStr "Digite o numero de linhas: "
+               linhas <- getLine
+               putStr "Digite o numero de colunas: "
+               colunas <- getLine
+               putStr "Digite o numero de minas: "
+               minas <- getLine
+               putStrLn (linhas++" "++colunas++"\n")
+               minas <- (tratarMinas(read (linhas):: Int) (read(colunas):: Int) (read(minas):: Int))
+               putStrLn (linhas++" "++colunas++" "++(show(minas))++"\n")
+            
+--if (read(minas):: Int) > (floor((read linhas :: Int) * (read colunas :: Int)/2))
+--then
+-- let minas = (floor((read linhas :: Int) * (read colunas :: Int)/2))
+
+tratarMinas:: Int -> Int -> Int-> IO Int
+tratarMinas x y z = do
+                  let aux = fromIntegral((x * y) `div` 2)  -- funcao temporaria que pega a parte inteira
+                  if(z > aux) then do
+                        return(aux)
+                  else if(z < 1) then do
+                        return(100)
+                  else return(z)
+                  
+
+
+                  
