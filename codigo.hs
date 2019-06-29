@@ -98,8 +98,9 @@ transform x = unsafePerformIO x
 listaEmbaralhada:: [a] -> [a]
 listaEmbaralhada lis = transform(shuffle lis)
 
-getElementoAleatorioLista:: [a] -> a
-getElementoAleatorioLista lis = (listaEmbaralhada(lis))!!0
+--getElementoAleatorioLista:: [a] -> a
+--getElementoAleatorioLista lis = (listaEmbaralhada(lis))!!0
+
 
 {-
     FUNÇÕES DE TRABALHO COM INTERFACE
@@ -222,13 +223,13 @@ montarMapa x y z = do
                    putStrLn "montar Mapa:"
                    let mapa = [(Celula "*" r c False False False 0) | r <- [0..(x - 1)] , c <- [0..(y - 1)]]--let mapa = [(Celula "*" x y False False False 0)];
                    --print(show(length(mapa))++ " --  elementos na matriz.")
+                   mapa <- posicionarMinas(0, (x*y), 0, z, [], mapa, [])
+                   --mapa <- posicionarMinas(0, (x*y), 0, z, [1,4,7,12,13,17,18,19], mapa, [])
                    printMapa x y z mapa
-                   return(mapa)   -- Retornando uma lista de célula
+                   return(mapa)   -- Retornando uma lista de células
 
 printMapa:: Int -> Int -> Int -> [Celula] -> IO()
 printMapa x y z mapa = do
-                       --putStr "\ESC[2J"
-                       --putStr "\ESC[2J"
                        system "clear"     -- no windows eh 'system "cls"'
                        print(show(length(mapa))++ " --  elementos na matriz.")
                        putStrLn "Imprimindo mapa:"
@@ -236,6 +237,10 @@ printMapa x y z mapa = do
                        forLoopPrintMapa(0, (x*y), x, y, 0, mapa)
                        putStrLn "\n--------------------------------------------------------------------------\n"
 
+{-
+  Simula um 'for' da linguagem imperativa e faz uma repetição para imprimir 
+  a matriz do campo minado no console.
+-}
 forLoopPrintMapa :: (Int, Int, Int, Int, Int, [Celula]) -> IO()
 forLoopPrintMapa(i, tamanho, lins, cols, opcao, ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms)) =
       do
@@ -276,6 +281,75 @@ forLoopPrintMapa(i, tamanho, lins, cols, opcao, ((Celula escrito idLinha idColun
                   putStrLn("\n\n\t Impressao do mapa concluida com sucesso!!!")
             else do
               print("Outras opcoes alem da 2")
+
+
+{-
+    Recebe uma lista dos indices do vetor que armazena o campo minado
+    , em seguida é embaralhada a lista e a cabeça dessa lista é inserida
+    em uma lista vazia e assim ao final retorna a lista de sorteados com
+    as posições das minas
+-}
+listaAleatoria:: [Int] -> Int -> [Int] -> IO [Int]
+listaAleatoria (x:xs) qtd listaSorteada = 
+                    do
+                      if(length(listaSorteada) < qtd)
+                        then do
+                          let listEmb = (listaEmbaralhada (x:xs))
+                          let caudaListEmb = (tail(listEmb))
+                          let cabecaListEmb = (head(listEmb))
+                          listaAleatoria caudaListEmb qtd (cabecaListEmb:listaSorteada)
+                        else do
+                          return(sort(listaSorteada))--return ()
+
+posicionarMinas :: (Int, Int, Int, Int, [Int], [Celula], [Celula]) -> IO [Celula]  -- linha, coluna, mapa
+posicionarMinas(i, tamanho, opcao, qtdMinas, sorteados, ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms), mapaAtualizado) = 
+                   do
+                     if(opcao == 0)                     -- Sorteia as posições
+                      then do
+                        putStrLn "posicionar Minas:"
+                        sorteados <- (listaAleatoria  [0..(tamanho - 1)] qtdMinas [])
+                        --print("Sorteados("++show(length(sorteados))++"): "++show(sorteados))
+                        posicionarMinas(i, tamanho, 1, qtdMinas, sorteados, ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms), mapaAtualizado)
+                      else do                           -- Acerta o campo minado atribuindo as posicoes sorteadas na opcao 1
+                        --putStrLn("\n i = "++show(i)++"\n")
+                        --putStrLn("\nTam ms: "++ show(length(ms))++" -- Estrutura: "++show(ms)++"\n")
+                        if(i < tamanho) -- Adiciona
+                          then do
+                            --putStrLn("\n sorteados tamanho: "++show(length(sorteados))++"\n")
+                            if(length(sorteados) /= 0) -- Passa pelas posicoes sorteadas
+                              then do
+                                 let cabecaLista = head sorteados
+                                 let caudaLista = tail sorteados
+                                 --putStrLn(show(i)++" i--head "  ++ show(cabecaLista))
+                                 --putStrLn(show(i)++" i--cauda " ++ show(caudaLista) ++ " tam: " ++ show(length(caudaLista)))
+                                 --putStrLn("Tam mapaAtualizado: "++ show(length(mapaAtualizado))++" -- Estrutura: "++show(mapaAtualizado))
+                                 {-
+                                    O if abaixo trata o erro na recursao finalizando e devolvendo o mapa alterado:
+                                    *** Exception: codigo.hs:(307,1)-(336,50): Non-exhaustive patterns in function posicionarMinas
+                                    ocorrido quando Sorteados(8): [1,4,7,12,13,17,18,19]
+                                    i = 19
+                                    19 i--head 19
+                                    19 i--cauda [] tam: 0
+
+                                 -}
+                                 if((i == (tamanho - 1)) && (length(caudaLista) == 0) && (i == cabecaLista))    -- Tratando erro
+                                  then do
+                                    --putStrLn("Excessao")
+                                    --posicionarMinas((i + 1), tamanho, 1, qtdMinas, caudaLista, ms, (mapaAtualizado ++ [(Celula escrito idLinha idColuna fechado True estado vizinho)]))
+                                    return((mapaAtualizado ++ [(Celula escrito idLinha idColuna fechado True estado vizinho)]))
+                                  else do
+                                    if(i == cabecaLista)
+                                      then do         -- Só remove da lista de sorteados se o elemento estiver na cabeça da lista, em seguida é passado a cauda
+                                        posicionarMinas((i + 1), tamanho, 1, qtdMinas, caudaLista, ms, (mapaAtualizado ++ [(Celula escrito idLinha idColuna fechado True estado vizinho)]))
+                                      else do
+                                        posicionarMinas((i + 1), tamanho, 1, qtdMinas, sorteados, ms, (mapaAtualizado ++ [(Celula escrito idLinha idColuna fechado mina estado vizinho)]))
+                              else do                 -- Adiciona o restante das celulas, e retorna
+                                let aux2 = ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms)
+                                let aux = (mapaAtualizado ++ aux2)
+                                return(aux)           
+                          else do
+                            putStrLn("Retorno")
+                            return(mapaAtualizado)
 
 forLoop :: Int -> Int -> Int -> Int
 forLoop i tamanho valor =
