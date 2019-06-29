@@ -221,7 +221,7 @@ montarMapa:: Int -> Int -> Int -> IO [Celula]
 montarMapa x y z = do
                    putStrLn "montar Mapa:"
                    let mapa = [(Celula "*" r c False False False 0) | r <- [0..(x - 1)] , c <- [0..(y - 1)]]--let mapa = [(Celula "*" x y False False False 0)];
-                   print(show(length(mapa))++ " --  elementos na matriz.")
+                   --print(show(length(mapa))++ " --  elementos na matriz.")
                    printMapa x y z mapa
                    return(mapa)   -- Retornando uma lista de célula
 
@@ -230,6 +230,7 @@ printMapa x y z mapa = do
                        --putStr "\ESC[2J"
                        --putStr "\ESC[2J"
                        system "clear"     -- no windows eh 'system "cls"'
+                       print(show(length(mapa))++ " --  elementos na matriz.")
                        putStrLn "Imprimindo mapa:"
                        putStrLn "\n--------------------------------------------------------------------------\n"
                        forLoopPrintMapa(0, (x*y), x, y, 0, mapa)
@@ -263,7 +264,7 @@ forLoopPrintMapa(i, tamanho, lins, cols, opcao, ((Celula escrito idLinha idColun
               then do
                 if(length(ms) > 0)                            -- Se o tamanho do tail da lista for maior que zero significa que tem mais de um elemento
                   then do
-                    if(i < lins)
+                    if(i < cols)
                       then do
                         putStr(escrito ++ " | ")
                         forLoopPrintMapa((i + 1), tamanho, lins, cols, 2, ms)
