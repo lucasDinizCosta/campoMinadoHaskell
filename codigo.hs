@@ -14,8 +14,9 @@ import Data.Array
 import Data.List
 import System.IO
 import System.Random
+import System.Process           -- Para poder ativar a limpeza do console
 import System.IO.Unsafe
-import Data.Char               --Algumas funções interessantes de caracteres
+import Data.Char                -- Algumas funções interessantes de caracteres
 {-  
   Trabalhando com matrizes:
 
@@ -220,51 +221,60 @@ montarMapa:: Int -> Int -> Int -> IO [Celula]
 montarMapa x y z = do
                    putStrLn "montar Mapa:"
                    let mapa = [(Celula "*" r c False False False 0) | r <- [0..(x - 1)] , c <- [0..(y - 1)]]--let mapa = [(Celula "*" x y False False False 0)];
+                   print(show(length(mapa))++ " --  elementos na matriz.")
                    printMapa x y z mapa
                    return(mapa)   -- Retornando uma lista de célula
 
 printMapa:: Int -> Int -> Int -> [Celula] -> IO()
 printMapa x y z mapa = do
+                       --putStr "\ESC[2J"
+                       --putStr "\ESC[2J"
+                       system "clear"     -- no windows eh 'system "cls"'
                        putStrLn "Imprimindo mapa:"
                        putStrLn "\n--------------------------------------------------------------------------\n"
                        forLoopPrintMapa(0, (x*y), x, y, 0, mapa)
                        putStrLn "\n--------------------------------------------------------------------------\n"
 
-
-
 forLoopPrintMapa :: (Int, Int, Int, Int, Int, [Celula]) -> IO()
-forLoopPrintMapa(i, tamanho, lins, cols, opcao, ((Celula escrito idLinha idColuna _ _ _ _):ms)) =
-      if(opcao == 0)--Imprime os titulos das colunas
-        then do
-          if(i == 0) 
-            then do
-               putStr ("\t")
-               putStr ("A")
-               forLoopPrintMapa((i + 1), tamanho, lins, cols, opcao, ms)
-            else
-              if(i < lins)
-                then do
-                  putStr (" + "++[(chr(ord ('A') + i))])  --Coloca o caractere corespondente a coluna
-                  forLoopPrintMapa((i + 1), tamanho, lins, cols, opcao, ms)
-                  --print escrito
+forLoopPrintMapa(i, tamanho, lins, cols, opcao, ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms)) =
+      do
+        if(opcao == 0)                                      -- Imprime os titulos das colunas
+          then do
+            if(i == 0) 
+              then do
+                 putStr ("\t ")
+                 putStr ("    | A | ")
+                 forLoopPrintMapa((i + 1), tamanho, lins, cols, opcao, ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms))
               else
-                  putStrLn ("\n")
-                  --forLoopPrintMapa(0, tamanho, lins, cols, 1, ms)
-                  --print "Teste"
-                  --forLoopPrintMapa (i + 1) tamanho lins cols 1 ((Celula escrito idLinha idColuna _ _ _ _):ms )
-        else
-          print "Teste"--valor
-
-{-         if(opcao == 1)--Imprime o restante do mapa
-          then do 
-               if(i < tamanho)
+                if(i < cols)
                   then do
-                     forLoopPrintMapa (i + 1) tamanho lins cols ms
-                  else
-                     print "Teste"--valor
-          else print "Teste"--valor
--}
-
+                    putStr ([(chr(ord ('A') + i))]++" | ")    -- Coloca o caractere corespondente a coluna
+                    forLoopPrintMapa((i + 1), tamanho, lins, cols, opcao, ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms))
+                else do                                       -- Terminou de escrever o titulo das linhas, volta no começo com a lista cheia pra escrever as colunas
+                    putStrLn ("\n")
+                    forLoopPrintMapa(0, tamanho, lins, cols, 1, ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms))
+        else do
+          if(opcao == 1)                                      -- Imprime a linha e depois vai pra opcao 2 pra imprimir os elementos de cada linha
+           then do 
+             putStr ("\t " ++ show(idLinha) ++ " - | ")
+             forLoopPrintMapa(0, tamanho, lins, cols, 2, ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms))
+          else do
+            if(opcao == 2)                                    -- Imprime elementos da linha
+              then do
+                if(length(ms) > 0)                            -- Se o tamanho do tail da lista for maior que zero significa que tem mais de um elemento
+                  then do
+                    if(i < lins)
+                      then do
+                        putStr(escrito ++ " | ")
+                        forLoopPrintMapa((i + 1), tamanho, lins, cols, 2, ms)
+                    else do
+                      putStr("\n")
+                      forLoopPrintMapa(0, tamanho, lins, cols, 1, ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms))
+                else do                                        -- Chegou no último elemento da lista
+                  putStr(escrito ++ " | ")                     -- Escrito do ultimo elemento
+                  putStrLn("\n\n\t Impressao do mapa concluida com sucesso!!!")
+            else do
+              print("Outras opcoes alem da 2")
 
 forLoop :: Int -> Int -> Int -> Int
 forLoop i tamanho valor =
