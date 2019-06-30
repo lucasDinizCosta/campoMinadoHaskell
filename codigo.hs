@@ -228,6 +228,17 @@ montarMapa x y z = do
                    let mapa = [(Celula "*" r c False False False 0) | r <- [0..(x - 1)] , c <- [0..(y - 1)]]--let mapa = [(Celula "*" x y False False False 0)];
                    --print(show(length(mapa))++ " --  elementos na matriz.")
                    mapa <- posicionarMinas(0, (x*y), 0, z, [], mapa, [])
+                   -- Teste posicionamento de minas:    mapa <- posicionarMinas(0, (x*y), 0, z, [1,2,3,4,6,9], mapa, [])
+                   --print(retornaVizinhos(0, (retornaCelulaPelaMatriz(0,0,mapa)), x, y, mapa, 0))
+                   print(mapa)
+                   {-aux <- retornaVizinhos(0, (retornaCelulaPelaMatriz(0,0,mapa)), x, y, mapa, 0)
+                   putStrLn("0,0: "++show(aux))
+                   aux <- retornaVizinhos(0, (retornaCelulaPelaMatriz(1,1,mapa)), x, y, mapa, 0)
+                   putStrLn("1,1: "++show(aux))
+                   aux <- retornaVizinhos(0, (retornaCelulaPelaMatriz(1,2,mapa)), x, y, mapa, 0)
+                   putStrLn("1,2: "++show(aux))-}
+                   --retornaVizinhos(opcao, cell, lins, cols, mapa, contador) =
+                   --mapa <- calculaVizinhos(0, (x*y), x, y, mapa, mapa, [])
                    --print(mapa!!2)
                    --print(retornaCelulaPelaMatriz(0,2,mapa))
                    --mapa <- posicionarMinas(0, (x*y), 0, z, [1,4,7,12,13,17,18,19], mapa, [])
@@ -313,7 +324,7 @@ posicionarMinas(i, tamanho, opcao, qtdMinas, sorteados, ((Celula escrito idLinha
                      if(opcao == 0)                     -- Sorteia as posições
                       then do
                         putStrLn "posicionar Minas:"
-                        sorteados <- (listaAleatoria  [0..(tamanho - 1)] qtdMinas [])
+                        --sorteados <- (listaAleatoria  [0..(tamanho - 1)] qtdMinas [])
                         --print("Sorteados("++show(length(sorteados))++"): "++show(sorteados))
                         posicionarMinas(i, tamanho, 1, qtdMinas, sorteados, ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms), mapaAtualizado)
                       else do                           -- Acerta o campo minado atribuindo as posicoes sorteadas na opcao 1
@@ -356,60 +367,86 @@ posicionarMinas(i, tamanho, opcao, qtdMinas, sorteados, ((Celula escrito idLinha
                             putStrLn("Retorno")
                             return(mapaAtualizado)
 
+--  matriz que será caminhada pela recursão, uma pra servir de referencia e consulta dos vizinhos
+--  e a que sera atualizada
+calculaVizinhos:: (Int, Int, Int, Int, [Celula], [Celula], [Celula]) -> IO [Celula]
+calculaVizinhos(i, tamanho, lins, cols, ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms), mapaVerificacao, mapaAtualizado) =
+                  do
+                  if(i < tamanho)
+                    then do
+                      aux <- (retornaVizinhos(0, (Celula escrito idLinha idColuna fechado mina estado vizinho), lins, cols, mapaVerificacao, 0))
+                      calculaVizinhos((i+1), tamanho, lins, cols, ms, mapaVerificacao, (mapaAtualizado ++ [(Celula escrito idLinha idColuna fechado mina estado aux)]))
+                    else do
+                      return(mapaAtualizado)
 
-calculaVizinhos :: (Int, Int, Int, Int, [Int], [Celula], [Celula]) -> IO [Celula]  -- linha, coluna, mapa
-calculaVizinhos(i, tamanho, opcao, qtdMinas, sorteados, ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms), mapaAtualizado) = 
-                   do
-                     if(opcao == 0)                     -- Sorteia as posições
+retornaVizinhos:: (Int, Celula, Int, Int, [Celula], Int) -> IO Int
+retornaVizinhos(opcao, cell, lins, cols, mapa, contador) = 
+                do
+                let c = (obterIDColuna cell)
+                let l = (obterIDLinha cell)
+                if(opcao == 0) -- Linha maior => Verifica para baixo
+                  then do
+                    if((l + 1) <= (lins - 1)) -- Dentro dos limites
                       then do
-                        putStrLn "calcula Vizinhos: "
-                        sorteados <- (listaAleatoria  [0..(tamanho - 1)] qtdMinas [])
-                        --print("Sorteados("++show(length(sorteados))++"): "++show(sorteados))
-                        posicionarMinas(i, tamanho, 1, qtdMinas, sorteados, ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms), mapaAtualizado)
-                      else do                           -- Acerta o campo minado atribuindo as posicoes sorteadas na opcao 1
-                        --putStrLn("\n i = "++show(i)++"\n")
-                        --putStrLn("\nTam ms: "++ show(length(ms))++" -- Estrutura: "++show(ms)++"\n")
-                        if(i < tamanho) -- Adiciona
+                        let aux = (retornaCelulaPelaMatriz((l + 1), c, mapa))
+                        if((obterEhMina aux) == True)
                           then do
-                            --putStrLn("\n sorteados tamanho: "++show(length(sorteados))++"\n")
-                            if(length(sorteados) /= 0) -- Passa pelas posicoes sorteadas
-                              then do
-                                 let cabecaLista = head sorteados
-                                 let caudaLista = tail sorteados
-                                 --putStrLn(show(i)++" i--head "  ++ show(cabecaLista))
-                                 --putStrLn(show(i)++" i--cauda " ++ show(caudaLista) ++ " tam: " ++ show(length(caudaLista)))
-                                 --putStrLn("Tam mapaAtualizado: "++ show(length(mapaAtualizado))++" -- Estrutura: "++show(mapaAtualizado))
-                                 {-
-                                    O if abaixo trata o erro na recursao finalizando e devolvendo o mapa alterado:
-                                    *** Exception: codigo.hs:(307,1)-(336,50): Non-exhaustive patterns in function posicionarMinas
-                                    ocorrido quando Sorteados(8): [1,4,7,12,13,17,18,19]
-                                    i = 19
-                                    19 i--head 19
-                                    19 i--cauda [] tam: 0
-
-                                 -}
-                                 if((i == (tamanho - 1)) && (length(caudaLista) == 0) && (i == cabecaLista))    -- Tratando erro
-                                  then do
-                                    --putStrLn("Excessao")
-                                    return((mapaAtualizado ++ [(Celula escrito idLinha idColuna fechado True estado vizinho)]))
-                                  else do
-                                    if(i == cabecaLista)
-                                      then do         -- Só remove da lista de sorteados se o elemento estiver na cabeça da lista, em seguida é passado a cauda
-                                        posicionarMinas((i + 1), tamanho, 1, qtdMinas, caudaLista, ms, (mapaAtualizado ++ [(Celula escrito idLinha idColuna fechado True estado vizinho)]))
-                                      else do
-                                        posicionarMinas((i + 1), tamanho, 1, qtdMinas, sorteados, ms, (mapaAtualizado ++ [(Celula escrito idLinha idColuna fechado mina estado vizinho)]))
-                              else do                 -- Adiciona o restante das celulas, e retorna
-                                let aux2 = ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms)
-                                let aux = (mapaAtualizado ++ aux2)
-                                return(aux)           
+                            print("Tem mina em baixo: "++ show(aux))
+                            retornaVizinhos(1, cell, lins, cols, mapa, (contador+1))
                           else do
-                            putStrLn("Retorno")
-                            return(mapaAtualizado)
+                            retornaVizinhos(1, cell, lins, cols, mapa, contador)
+                      else do
+                        retornaVizinhos(1, cell, lins, cols, mapa, contador)
+                  else do
+                    if(opcao == 1) -- Linha menor => Verifica para cima
+                      then do
+                        if((l - 1) >= 0) -- Dentro dos limites
+                          then do
+                            let aux = (retornaCelulaPelaMatriz((l - 1), c, mapa))
+                            if((obterEhMina aux) == True)
+                              then do
+                                print("Tem mina em cima: "++ show(aux))
+                                retornaVizinhos(2, cell, lins, cols, mapa, (contador+1))
+                              else do
+                                retornaVizinhos(2, cell, lins, cols, mapa, contador)
+                          else do
+                            retornaVizinhos(2, cell, lins, cols, mapa, contador)
+                      else do
+                        if(opcao == 2) -- Coluna maior => Verifica para direita
+                          then do
+                            if((c + 1) <= (cols - 1)) -- Dentro dos limites
+                              then do
+                                let aux = (retornaCelulaPelaMatriz(l, (c + 1), mapa))
+                                if((obterEhMina aux) == True)
+                                  then do
+                                    print("Tem mina na direita: "++ show(aux))
+                                    retornaVizinhos(3, cell, lins, cols, mapa, (contador+1))
+                                  else do
+                                    retornaVizinhos(3, cell, lins, cols, mapa, contador)
+                              else do
+                                retornaVizinhos(3, cell, lins, cols, mapa, contador)
 
---calculaVizinhos:: (Int, Int, Int, Int, Int, [Celula], [Celula]) -> [Celula]
---calculaVizinhos(i, tamanho, lins, cols, opcao, (i, tamanho, opcao, (cell:ms), mapaAtualizado) =
---                  do
---retornaVizinhos:: (Int, Int, Int, Int)
+                          else do
+                            if(opcao == 3) -- Coluna menor => Verifica para esquerda
+                              then do
+                                if((c - 1) >= 0) -- Dentro dos limites
+                                  then do
+                                    let aux = (retornaCelulaPelaMatriz(l, (c - 1), mapa))
+                                    if((obterEhMina aux) == True)
+                                      then do
+                                        print("Tem mina na esquerda: "++ show(aux))
+                                        retornaVizinhos(4, cell, lins, cols, mapa, (contador+1))
+                                      else do
+                                        retornaVizinhos(4, cell, lins, cols, mapa, contador)
+                                  else do
+                                    retornaVizinhos(4, cell, lins, cols, mapa, contador)
+                              else do
+                                return(contador)
+
+                
+
+
+
 --i,lin, col,
 
 retornaCelulaPelaMatriz:: (Int, Int, [Celula]) -> Celula
