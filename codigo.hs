@@ -238,7 +238,7 @@ montarMapa x y z = do
                    aux <- retornaVizinhos(0, (retornaCelulaPelaMatriz(1,2,mapa)), x, y, mapa, 0)
                    putStrLn("1,2: "++show(aux))-}
                    --retornaVizinhos(opcao, cell, lins, cols, mapa, contador) =
-                   --mapa <- calculaVizinhos(0, (x*y), x, y, mapa, mapa, [])
+                   mapa <- calculaVizinhos(0, (x*y), x, y, mapa, mapa, [])
                    --print(mapa!!2)
                    --print(retornaCelulaPelaMatriz(0,2,mapa))
                    --mapa <- posicionarMinas(0, (x*y), 0, z, [1,4,7,12,13,17,18,19], mapa, [])
@@ -324,7 +324,7 @@ posicionarMinas(i, tamanho, opcao, qtdMinas, sorteados, ((Celula escrito idLinha
                      if(opcao == 0)                     -- Sorteia as posições
                       then do
                         putStrLn "posicionar Minas:"
-                        --sorteados <- (listaAleatoria  [0..(tamanho - 1)] qtdMinas [])
+                        sorteados <- (listaAleatoria  [0..(tamanho - 1)] qtdMinas [])
                         --print("Sorteados("++show(length(sorteados))++"): "++show(sorteados))
                         posicionarMinas(i, tamanho, 1, qtdMinas, sorteados, ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms), mapaAtualizado)
                       else do                           -- Acerta o campo minado atribuindo as posicoes sorteadas na opcao 1
@@ -369,14 +369,22 @@ posicionarMinas(i, tamanho, opcao, qtdMinas, sorteados, ((Celula escrito idLinha
 
 --  matriz que será caminhada pela recursão, uma pra servir de referencia e consulta dos vizinhos
 --  e a que sera atualizada
+
+--- ARRUMAR
 calculaVizinhos:: (Int, Int, Int, Int, [Celula], [Celula], [Celula]) -> IO [Celula]
 calculaVizinhos(i, tamanho, lins, cols, ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms), mapaVerificacao, mapaAtualizado) =
                   do
-                  if(i < tamanho)
+                  if(i < tamanho)--if(i < tamanho)
                     then do
                       aux <- (retornaVizinhos(0, (Celula escrito idLinha idColuna fechado mina estado vizinho), lins, cols, mapaVerificacao, 0))
-                      calculaVizinhos((i+1), tamanho, lins, cols, ms, mapaVerificacao, (mapaAtualizado ++ [(Celula escrito idLinha idColuna fechado mina estado aux)]))
+                      putStrLn("i: "++ show(i) ++ " - ms - "++show(length(ms))++"- ["++show(idLinha)++" , "++show(idColuna)++"]: "++ show(aux))
+                      if(i /= (tamanho - 1))
+                        then do
+                          calculaVizinhos((i+1), tamanho, lins, cols, ms, mapaVerificacao, (mapaAtualizado ++ [(Celula escrito idLinha idColuna fechado mina estado aux)]))
+                        else do             -- Tratamento de erro de recursão do ultimo elemento
+                          return(mapaAtualizado ++ [(Celula escrito idLinha idColuna fechado mina estado aux)])
                     else do
+                      print("FFFFF")
                       return(mapaAtualizado)
 
 retornaVizinhos:: (Int, Celula, Int, Int, [Celula], Int) -> IO Int
