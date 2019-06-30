@@ -214,9 +214,13 @@ prepararJogo = do
                minas <- (tratarMinas(read (linhas):: Int) (read(colunas):: Int))
                putStrLn (linhas ++ " " ++ colunas ++ " " ++ (show(minas)) ++ "\n")
                campoMinado <- montarMapa (read (linhas):: Int) (read (colunas):: Int) minas
-               --printMapa (read (linhas):: Int) (read (colunas):: Int) (read (minas):: Int) campoMinado
+               --ATIVAR JOGADA
+               executarJogada campoMinado
                putStr ""   -- Se tirar causa erro de identação
                
+executarJogada:: [Celula] -> IO()
+executarJogada mapa = do
+                      putStr("")
 
 montarMapa:: Int -> Int -> Int -> IO [Celula]
 montarMapa x y z = do
@@ -224,6 +228,8 @@ montarMapa x y z = do
                    let mapa = [(Celula "*" r c False False False 0) | r <- [0..(x - 1)] , c <- [0..(y - 1)]]--let mapa = [(Celula "*" x y False False False 0)];
                    --print(show(length(mapa))++ " --  elementos na matriz.")
                    mapa <- posicionarMinas(0, (x*y), 0, z, [], mapa, [])
+                   --print(mapa!!2)
+                   --print(retornaCelulaPelaMatriz(0,2,mapa))
                    --mapa <- posicionarMinas(0, (x*y), 0, z, [1,4,7,12,13,17,18,19], mapa, [])
                    printMapa x y z mapa
                    return(mapa)   -- Retornando uma lista de células
@@ -335,7 +341,6 @@ posicionarMinas(i, tamanho, opcao, qtdMinas, sorteados, ((Celula escrito idLinha
                                  if((i == (tamanho - 1)) && (length(caudaLista) == 0) && (i == cabecaLista))    -- Tratando erro
                                   then do
                                     --putStrLn("Excessao")
-                                    --posicionarMinas((i + 1), tamanho, 1, qtdMinas, caudaLista, ms, (mapaAtualizado ++ [(Celula escrito idLinha idColuna fechado True estado vizinho)]))
                                     return((mapaAtualizado ++ [(Celula escrito idLinha idColuna fechado True estado vizinho)]))
                                   else do
                                     if(i == cabecaLista)
@@ -350,6 +355,78 @@ posicionarMinas(i, tamanho, opcao, qtdMinas, sorteados, ((Celula escrito idLinha
                           else do
                             putStrLn("Retorno")
                             return(mapaAtualizado)
+
+
+calculaVizinhos :: (Int, Int, Int, Int, [Int], [Celula], [Celula]) -> IO [Celula]  -- linha, coluna, mapa
+calculaVizinhos(i, tamanho, opcao, qtdMinas, sorteados, ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms), mapaAtualizado) = 
+                   do
+                     if(opcao == 0)                     -- Sorteia as posições
+                      then do
+                        putStrLn "calcula Vizinhos: "
+                        sorteados <- (listaAleatoria  [0..(tamanho - 1)] qtdMinas [])
+                        --print("Sorteados("++show(length(sorteados))++"): "++show(sorteados))
+                        posicionarMinas(i, tamanho, 1, qtdMinas, sorteados, ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms), mapaAtualizado)
+                      else do                           -- Acerta o campo minado atribuindo as posicoes sorteadas na opcao 1
+                        --putStrLn("\n i = "++show(i)++"\n")
+                        --putStrLn("\nTam ms: "++ show(length(ms))++" -- Estrutura: "++show(ms)++"\n")
+                        if(i < tamanho) -- Adiciona
+                          then do
+                            --putStrLn("\n sorteados tamanho: "++show(length(sorteados))++"\n")
+                            if(length(sorteados) /= 0) -- Passa pelas posicoes sorteadas
+                              then do
+                                 let cabecaLista = head sorteados
+                                 let caudaLista = tail sorteados
+                                 --putStrLn(show(i)++" i--head "  ++ show(cabecaLista))
+                                 --putStrLn(show(i)++" i--cauda " ++ show(caudaLista) ++ " tam: " ++ show(length(caudaLista)))
+                                 --putStrLn("Tam mapaAtualizado: "++ show(length(mapaAtualizado))++" -- Estrutura: "++show(mapaAtualizado))
+                                 {-
+                                    O if abaixo trata o erro na recursao finalizando e devolvendo o mapa alterado:
+                                    *** Exception: codigo.hs:(307,1)-(336,50): Non-exhaustive patterns in function posicionarMinas
+                                    ocorrido quando Sorteados(8): [1,4,7,12,13,17,18,19]
+                                    i = 19
+                                    19 i--head 19
+                                    19 i--cauda [] tam: 0
+
+                                 -}
+                                 if((i == (tamanho - 1)) && (length(caudaLista) == 0) && (i == cabecaLista))    -- Tratando erro
+                                  then do
+                                    --putStrLn("Excessao")
+                                    return((mapaAtualizado ++ [(Celula escrito idLinha idColuna fechado True estado vizinho)]))
+                                  else do
+                                    if(i == cabecaLista)
+                                      then do         -- Só remove da lista de sorteados se o elemento estiver na cabeça da lista, em seguida é passado a cauda
+                                        posicionarMinas((i + 1), tamanho, 1, qtdMinas, caudaLista, ms, (mapaAtualizado ++ [(Celula escrito idLinha idColuna fechado True estado vizinho)]))
+                                      else do
+                                        posicionarMinas((i + 1), tamanho, 1, qtdMinas, sorteados, ms, (mapaAtualizado ++ [(Celula escrito idLinha idColuna fechado mina estado vizinho)]))
+                              else do                 -- Adiciona o restante das celulas, e retorna
+                                let aux2 = ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms)
+                                let aux = (mapaAtualizado ++ aux2)
+                                return(aux)           
+                          else do
+                            putStrLn("Retorno")
+                            return(mapaAtualizado)
+
+--calculaVizinhos:: (Int, Int, Int, Int, Int, [Celula], [Celula]) -> [Celula]
+--calculaVizinhos(i, tamanho, lins, cols, opcao, (i, tamanho, opcao, (cell:ms), mapaAtualizado) =
+--                  do
+--retornaVizinhos:: (Int, Int, Int, Int)
+--i,lin, col,
+
+retornaCelulaPelaMatriz:: (Int, Int, [Celula]) -> Celula
+retornaCelulaPelaMatriz (i, j, lis) = 
+              do
+              let col = (obterIDColuna (last (lis)) + 1)
+              let indexVetor = (j + i * col)
+              obterCelula(indexVetor, lis)
+
+obterCelula::(Int, [Celula]) -> Celula
+obterCelula(i,lis) = (lis!!i)
+
+soma:: Int ->IO Int
+soma x = do 
+         putStr("")
+         return(x + 1)
+          
 
 forLoop :: Int -> Int -> Int -> Int
 forLoop i tamanho valor =
@@ -370,6 +447,27 @@ tratarMinas x y = do
                         return(1)
                   else return(auxMinas)
                   
+{-
+  FUNÇÕES PARA OBTER OS ATRIBUTOS INTERNOS A CELULA DO MAPA
+-}
 
---minas = (read(minas):: Int)
-                  
+obterEscrito :: Celula -> String
+obterEscrito (Celula escrito idLinha idColuna fechado mina estado vizinho) = escrito
+
+obterIDLinha :: Celula -> Int
+obterIDLinha (Celula escrito idLinha idColuna fechado mina estado vizinho) = idLinha
+
+obterIDColuna :: Celula -> Int
+obterIDColuna (Celula escrito idLinha idColuna fechado mina estado vizinho) = idColuna
+
+obterFechado :: Celula -> Bool
+obterFechado (Celula escrito idLinha idColuna fechado mina estado vizinho) = fechado
+
+obterEhMina :: Celula -> Bool
+obterEhMina (Celula escrito idLinha idColuna fechado mina estado vizinho) = mina
+
+obterEstado :: Celula -> Bool
+obterEstado (Celula escrito idLinha idColuna fechado mina estado vizinho) = estado
+
+obterVizinho :: Celula -> Int
+obterVizinho (Celula escrito idLinha idColuna fechado mina estado vizinho) = vizinho
