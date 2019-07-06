@@ -275,7 +275,6 @@ tratarJogada(jogada, linhas, colunas, minasMapa, minasJogador, mapa, qtdCelulasV
           if((priPosicao >= 65) && (priPosicao <= 90))   -- São as letras maisculas
             then do
               testeNumerico <- (analisaStringNumero(retornaSubstring(jogada, 0, 1)))  -- Remove o caractere da letra e faz a analise se é numero Se nao for, o valor é -100, o contrário é valor corretamente
-              putStrLn("TESTE")
               if(testeNumerico >= 0)
                 then do
                   -- VALOR CORRETO
@@ -296,10 +295,12 @@ tratarJogada(jogada, linhas, colunas, minasMapa, minasJogador, mapa, qtdCelulasV
                         else do
                           if(obterEhMina(celulaMapa))
                             then do                       -- DERROTA
-                              -- CRIAR METODO REVELAMAPA QUE MOSTRA O FINAL DE LIBERAR TUDO OU PERDER
-                              -- CRIAR METODO REVELAMAPA QUE MOSTRA O FINAL DE LIBERAR TUDO OU PERDER
+                              mapa <- (revelarMapa(mapa, [], linhas, colunas, minasMapa, minasJogador, qtdCelulasVazias))
+                              printMapa(linhas, colunas, minasMapa, minasJogador, mapa, qtdCelulasVazias)
                               putStrLn("A celula tinha uma mina, infelizmente voce perdeu.")
                               putStrLn("\n\n \t \t GAME OVER !!! \n\n")
+                              putStrLn("Pressione ENTER pra continuar!")
+                              getChar -- descarta o Enter
                               terminaPartida
                             else do                       -- Jogada válida
                               if(qtdCelulasVazias > 0)
@@ -308,15 +309,19 @@ tratarJogada(jogada, linhas, colunas, minasMapa, minasJogador, mapa, qtdCelulasV
                                   executarJogada(mapa, linhas, colunas, minasMapa, minasJogador, (qtdCelulasVazias - 1))
                                   --mapa <- atualizaMapa(mapa, mapaAtualizado,  linhas, colunas, minasMapa, minasJogador, qtdCelulasVazias, codLinha, codColuna, status)
                                 else do                   -- VITORIA
-                                  -- CRIAR METODO REVELAMAPA QUE MOSTRA O FINAL DE LIBERAR TUDO OU PERDER
-                                  -- CRIAR METODO REVELAMAPA QUE MOSTRA O FINAL DE LIBERAR TUDO OU PERDER
+                                  mapa <- (revelarMapa(mapa, [], linhas, colunas, minasMapa, minasJogador, qtdCelulasVazias))
+                                  printMapa(linhas, colunas, minasMapa, minasJogador, mapa, qtdCelulasVazias)
                                   putStrLn("\n\n \t \t Você venceu, parabéns!!!!")
                                   putStrLn("Você venceu, parabéns!!!! \n\n")
+                                  putStrLn("Pressione ENTER pra continuar!")
                                   getChar -- descarta o Enter
                                   terminaPartida
                 else do
                   -- PARAMETROS ERRADOS
-                  putStr("Erro na passagem de parametros, utilize letras MAIUSCULAS para a identificacao das colunas e os numeros para a linha corretamente.\n")
+                  putStr("\n\nErro na passagem de parametros, utilize letras MAIUSCULAS para a identificacao \ndas colunas e os numeros para a linha corretamente.\n")
+                  putStrLn("Pressione ENTER pra continuar!")
+                  getChar -- descarta o Enter
+                  executarJogada(mapa, linhas, colunas, minasMapa, minasJogador, qtdCelulasVazias)
             else do
               putStr("")
               {-if(length(jogada) >= 3) -- Simbolo, letra, Numero
@@ -442,9 +447,6 @@ retornaSubstring(texto, indice, parada) = do
             retornaSubstring(tail(texto), (indice + 1), parada)
 
 
-
-
---atualizaMapa((cabeca:mapa), mapaAtualizado,  linhas, colunas, minasMapa, minasJogador, qtdCelulasVazias, codLinha, codColuna, status)
 -- Metodo responsavel por atualizar o mapa com base na alteracao do jogador
 atualizaMapa::([Celula], [Celula], Celula, Int, Int, Int, Int, Int, Int) -> IO [Celula]
 atualizaMapa((cabeca:mapa), mapaAtualizado, elemento, linhas, colunas, minasMapa, 
@@ -452,23 +454,23 @@ atualizaMapa((cabeca:mapa), mapaAtualizado, elemento, linhas, colunas, minasMapa
                 do
                   if(length(mapa) > 0)    
                     then do
-                      print(show(cabeca)++ " ---  " ++ show(elemento))
+                      --print(show(cabeca)++ " ---  " ++ show(elemento))
                       if((obterIDLinha(cabeca) == obterIDLinha(elemento)) && (obterIDColuna(cabeca) == obterIDColuna(elemento)))
                         then do -- //ALTERAR O ELEMENTO
-                          let aux = (mapaAtualizado ++ [(Celula (show(obterVizinho(elemento))) (obterIDLinha(elemento)) (obterIDColuna(elemento)) (obterFechado(elemento)) (obterEhMina(elemento)) (obterMarcacaoMinaJogador(elemento)) (obterVizinho(elemento)))])
+                          let aux = (mapaAtualizado ++ [(Celula (show(obterVizinho(elemento))) (obterIDLinha(elemento)) (obterIDColuna(elemento)) True (obterEhMina(elemento)) (obterMarcacaoMinaJogador(elemento)) (obterVizinho(elemento)))])
                           atualizaMapa(mapa, aux, elemento, linhas, colunas, minasMapa, minasJogador, qtdCelulasVazias, 0)
                         else do --                           //ACHOU FAZ TEMPO -- coloca o resto de mapa no atualizado
-                          --return(mapaAtualizado ++ (cabeca:mapa))
-                          print(show(cabeca))
+                          --print(show(cabeca))
                           atualizaMapa(mapa, (mapaAtualizado ++ [cabeca]), elemento, linhas, colunas, minasMapa, minasJogador, qtdCelulasVazias, 0)
                     else do       -- Trata o problema com o ultimo elemento do mapa
                       if((obterIDLinha(cabeca) == obterIDLinha(elemento)) && (obterIDColuna(cabeca) == obterIDColuna(elemento)))
-                        then do -- //ALTERAR O ELEMENTO
-                          let aux = (mapaAtualizado ++ [(Celula (show(obterVizinho(elemento))) (obterIDLinha(elemento)) (obterIDColuna(elemento)) (obterFechado(elemento)) (obterEhMina(elemento)) (obterMarcacaoMinaJogador(elemento)) (obterVizinho(elemento)))])
+                        then do 
+                          let aux = (mapaAtualizado ++ [(Celula (show(obterVizinho(elemento))) (obterIDLinha(elemento)) (obterIDColuna(elemento)) True (obterEhMina(elemento)) (obterMarcacaoMinaJogador(elemento)) (obterVizinho(elemento)))])
                           return(aux)
-                        else do --                           //ACHOU FAZ TEMPO -- coloca o resto de mapa no atualizado
+                        else do --                           
                           print(show(cabeca)++ " ---  " ++ show(elemento))
-                          return(mapaAtualizado ++ [cabeca])--return()
+                          return(mapaAtualizado ++ [cabeca])
+
 --data Celula = Celula Escrito IdLinha IdColuna Fechado Mina MarcacaoMinaJogador Vizinho
 
 --alterarMapa mapa mapaAtualizado linhas colunas minas linhaEscolhida colunaEscolhida 1 = -- opcao da Jogada 2: Posicionar mina do jogador em cima
@@ -480,8 +482,40 @@ atualizaMapa((cabeca:mapa), mapaAtualizado, elemento, linhas, colunas, minasMapa
 -- alterarMapa mapa mapaAtualizado linhas colunas minas linhaEscolhida colunaEscolhida opcao =
 
 
-funcTeste:: String -> Int
-funcTeste text = read(text)::Int
+-- Metodo responsavel por revelar o mapa com base no final da partida
+revelarMapa::([Celula], [Celula], Int, Int, Int, Int, Int) -> IO [Celula]
+revelarMapa((cabeca:mapa), mapaAtualizado, linhas, colunas, minasMapa, minasJogador, qtdCelulasVazias) =
+                do
+                  if(length(mapa) > 0)    
+                    then do
+                      --print(show(cabeca)++ " ---  " ++ show(elemento))
+                      if(obterFechado(cabeca))
+                        then do
+                          let aux = (mapaAtualizado ++ [(Celula (show(obterVizinho(cabeca))) (obterIDLinha(cabeca)) (obterIDColuna(cabeca)) (obterFechado(cabeca)) (obterEhMina(cabeca)) (obterMarcacaoMinaJogador(cabeca)) (obterVizinho(cabeca)))])
+                          revelarMapa(mapa, aux, linhas, colunas, minasMapa, minasJogador, qtdCelulasVazias)
+                        else do
+                          if(obterEhMina(cabeca))
+                            then do
+                              let aux = (mapaAtualizado ++ [(Celula "B" (obterIDLinha(cabeca)) (obterIDColuna(cabeca)) (obterFechado(cabeca)) (obterEhMina(cabeca)) (obterMarcacaoMinaJogador(cabeca)) (obterVizinho(cabeca)))])
+                              revelarMapa(mapa, aux, linhas, colunas, minasMapa, minasJogador, qtdCelulasVazias)
+                            else do
+                              let aux = (mapaAtualizado ++ [(Celula (show(obterVizinho(cabeca))) (obterIDLinha(cabeca)) (obterIDColuna(cabeca)) (obterFechado(cabeca)) (obterEhMina(cabeca)) (obterMarcacaoMinaJogador(cabeca)) (obterVizinho(cabeca)))])
+                              revelarMapa(mapa, aux, linhas, colunas, minasMapa, minasJogador, qtdCelulasVazias)
+                    else do       -- Trata o problema com o ultimo elemento do mapa
+                      if(obterFechado(cabeca))
+                        then do
+                          let aux = (mapaAtualizado ++ [(Celula (show(obterVizinho(cabeca))) (obterIDLinha(cabeca)) (obterIDColuna(cabeca)) (obterFechado(cabeca)) (obterEhMina(cabeca)) (obterMarcacaoMinaJogador(cabeca)) (obterVizinho(cabeca)))])
+                          return(aux)
+                        else do
+                          if(obterEhMina(cabeca))
+                            then do
+                              let aux = (mapaAtualizado ++ [(Celula "B" (obterIDLinha(cabeca)) (obterIDColuna(cabeca)) (obterFechado(cabeca)) (obterEhMina(cabeca)) (obterMarcacaoMinaJogador(cabeca)) (obterVizinho(cabeca)))])
+                              return(aux)
+                            else do
+                              let aux = (mapaAtualizado ++ [(Celula (show(obterVizinho(cabeca))) (obterIDLinha(cabeca)) (obterIDColuna(cabeca)) (obterFechado(cabeca)) (obterEhMina(cabeca)) (obterMarcacaoMinaJogador(cabeca)) (obterVizinho(cabeca)))])
+                              return(aux)
+                          
+
 
 montarMapa::(Int, Int, Int, Int) -> IO [Celula]
 montarMapa(linhas, colunas, minas, qtdCelulasVazias) = do
