@@ -16,6 +16,8 @@ import System.IO
 import System.Random
 import System.Process           -- Para poder ativar a limpeza do console
 import System.IO.Unsafe
+import Control.Exception
+import System.IO.Error
 import Data.Char                -- Algumas funções interessantes de caracteres
 {-  
   Trabalhando com matrizes:
@@ -57,7 +59,8 @@ import Data.Char                -- Algumas funções interessantes de caracteres
 minas = 8
 linhas = 4
 colunas = 4
-listaTeste = [1..10]
+posAbertas = []
+minasMarcadas = []
 
 --removeIndiceLista :: Int -> [Int] -> [Int]
 removeIndiceLista n x = (delete (x!!n) x)
@@ -162,7 +165,7 @@ main = do
   button3 <- buttonNewWithLabel "Three"
 
   onClicked button1 (print(linhas))  -- Atribuindo função a um botão
-  onClicked button2 (print(listaTeste))  -- Atribuindo função a um botão
+  onClicked button2 (print"Funcionou")  -- Atribuindo função a um botão
   onClicked button1 $ do
     geraMatriz
   onClicked button3 $ do
@@ -215,12 +218,96 @@ prepararJogo = do
                putStrLn (linhas ++ " " ++ colunas ++ " " ++ (show(minas)) ++ "\n")
                campoMinado <- montarMapa (read (linhas):: Int) (read (colunas):: Int) minas
                --ATIVAR JOGADA
-               executarJogada campoMinado
+               executarJogada(campoMinado, read (linhas)::Int, read (colunas)::Int, minas)
                putStr ""   -- Se tirar causa erro de identação
                
-executarJogada:: [Celula] -> IO()
-executarJogada mapa = do
+executarJogada::([Celula], Int, Int,  Int) -> IO()
+executarJogada(mapa, linhas, colunas, minas) = do
+                      putStr "\tJogadas possiveis: \n\n"
+                      putStrLn("=> |  posicao | posicao a ser aberta                 | Exemplo:  A1 |  ")
+                      putStrLn("=> | +posicao | posicao marcada como mina            | Exemplo: +D2 |  ")
+                      putStrLn("=> | -posicao | desmarcar posicao marcada como mina  | Exemplo: -D2 |\n")
+                      putStr("Digite sua jogada: ")
+                      jogada <- getLine
+                      --jogada <- tratarJogada(jogada, linhas, colunas, minas, mapa)
+                      --tratarJogada("")
                       putStr("")
+
+{-                      
+tratarJogada:: String -> Int -> Int -> Int -> [Celula] -> IO() String
+tratarJogada jogada linhas colunas minas mapa = 
+                  do
+                  if(length(jogada) >= 2)
+                    then do
+                      let priPosicao = ord(jogada!!0)
+                      let segPosicao = ord(jogada!!1)
+                      if((priPosicao >= 65) && (priPosicao <= 90))-- São as letras maisculas
+                        then do
+                          analisaStringNumero(String)
+                          -- Posicao a ser aberta
+                        else do
+                          if(priPosicao == 43)  -- '+' => Marcar mina
+                            then do
+                              if((priPosicao >= 65) && (priPosicao <= 90))-- São as letras maisculas
+                                then do
+                                  -- Posicao a ser aberta
+                                else do
+                                  --  ERRO NA PASSAGEM DE PARAMETRO
+                            else do
+                              if(priPosicao == 45)  -- '-'
+                                then do
+                                  dada
+                                else do
+                                  --  ERRO NA PASSAGEM DE PARAMETRO
+                    else do
+                      putStr("Erro na passagem de parametros, digite conforme o exemplos citado.\n")
+                      putStr("Digite sua jogada: ")
+                      jogada <- getLine
+                      tratarJogada(jogada)
+                      --  ERRO NA PASSAGEM DE PARAMETRO: Parametro incorreto
+
+analisaStringNumero:: String -> IO Bool
+analisaStringNumero(texto) = 
+                  do
+                  {catch (testaString) tratar_erro;}
+                  where
+                    testaString = do
+                    {
+                      --let aux = (read (texto):: Int)
+                      {-if(length(texto) > 0)
+                        then do
+                          if(isNumber(head(texto))==True)
+                            then do
+                              analisaStringNumero(tail(texto))
+                            else do
+                              False
+                        else do
+                          True
+                       -}
+                       False
+                    }
+                    tratar_erro = if isDoesNotExistError erro then do
+                    {
+                      True
+                    }
+                    else
+                      False -- ioError erro
+  -}
+
+-- Retorna a conversão de uma String pra Int e caso ocorra erro retorna -100.
+analisaStringNumero:: String -> IO Int
+analisaStringNumero(texto) = do
+  eVal <- try (print(read(texto)::Int)) :: IO (Either SomeException ())
+  case eVal of
+    Right () -> do  -- Nenhuma exceção lançada, conseguiu efetuar a conversão de tipos
+                  putStrLn("Foi")
+                  return(read(texto)::Int)
+    Left e   -> do  -- Exceção capturada 
+                  putStrLn("Exceção encontrada")
+                  return(-100)                     
+
+funcTeste:: String -> Int
+funcTeste text = read(text)::Int
 
 montarMapa:: Int -> Int -> Int -> IO [Celula]
 montarMapa x y z = do
@@ -230,7 +317,7 @@ montarMapa x y z = do
                    mapa <- posicionarMinas(0, (x*y), 0, z, [], mapa, [])
                    -- Teste posicionamento de minas:    mapa <- posicionarMinas(0, (x*y), 0, z, [1,2,3,4,6,9], mapa, [])
                    --print(retornaVizinhos(0, (retornaCelulaPelaMatriz(0,0,mapa)), x, y, mapa, 0))
-                   print(mapa)
+                   --print(mapa)
                    {-aux <- retornaVizinhos(0, (retornaCelulaPelaMatriz(0,0,mapa)), x, y, mapa, 0)
                    putStrLn("0,0: "++show(aux))
                    aux <- retornaVizinhos(0, (retornaCelulaPelaMatriz(1,1,mapa)), x, y, mapa, 0)
@@ -367,14 +454,13 @@ posicionarMinas(i, tamanho, opcao, qtdMinas, sorteados, ((Celula escrito idLinha
                             putStrLn("Retorno")
                             return(mapaAtualizado)
 
---  matriz que será caminhada pela recursão, uma pra servir de referencia e consulta dos vizinhos
---  e a que sera atualizada
 
---- ARRUMAR
+
+-- Realiza o calculo para cada célula da quantidade de vizinhos que possuem minas em volta
 calculaVizinhos:: (Int, Int, Int, Int, [Celula], [Celula], [Celula]) -> IO [Celula]
 calculaVizinhos(i, tamanho, lins, cols, ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms), mapaVerificacao, mapaAtualizado) =
                   do
-                  if(i < tamanho)--if(i < tamanho)
+                  if(i < tamanho)
                     then do
                       aux <- (retornaVizinhos(0, (Celula escrito idLinha idColuna fechado mina estado vizinho), lins, cols, mapaVerificacao, 0))
                       putStrLn("i: "++ show(i) ++ " - ms - "++show(length(ms))++"- ["++show(idLinha)++" , "++show(idColuna)++"]: "++ show(aux))
