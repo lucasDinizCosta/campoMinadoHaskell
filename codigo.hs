@@ -209,8 +209,14 @@ geraMatriz = do
 --prepararJogo :: Jogadores -> IO Jogadores
 prepararJogo:: IO()
 prepararJogo = do
+               system "clear"     -- no windows eh 'system "cls"'
                putStrLn "\n--------------------------------------------------------------------------\n"
-               putStrLn "\n-------------------              CAMPO MINADO         --------------------\n"
+               putStrLn "------ Trabalho de Linguagem de programação (2019/1):   ------------------\n"
+               putStrLn "------ Aluno: Lucas Diniz da Costa                      ------------------\n"
+               putStrLn "--------------------------------------------------------------------------\n"
+               putStrLn "--------------------------------------------------------------------------\n"
+               putStrLn "-------------------            CAMPO MINADO           --------------------\n"
+               putStrLn "--------------------------------------------------------------------------\n\n"
                putStr "Digite o numero de linhas: "
                linhas <- getLine
                putStr "Digite o numero de colunas: "
@@ -218,27 +224,27 @@ prepararJogo = do
                putStrLn (linhas ++ " " ++ colunas ++ "\n")
                minas <- (tratarMinas(read (linhas):: Int) (read(colunas):: Int))
                putStrLn (linhas ++ " " ++ colunas ++ " " ++ (show(minas)) ++ "\n")
-               campoMinado <- montarMapa (read (linhas):: Int) (read (colunas):: Int) minas
-               --ATIVAR JOGADA
-               --executarJogada(campoMinado, read (linhas)::Int, read (colunas)::Int, minas)
+               let qtdCelulasVazias = ((read (linhas)::Int) * (read (colunas)::Int) - minas)
+               campoMinado <- montarMapa((read (linhas):: Int), (read (colunas):: Int), minas, qtdCelulasVazias)
+               executarJogada(campoMinado, read (linhas)::Int, read (colunas)::Int, minas, 0, qtdCelulasVazias)
                putStr ""   -- Se tirar causa erro de identação
-{-
-executarJogada::([Celula], Int, Int,  Int) -> IO()
-executarJogada(mapa, linhas, colunas, minas) = do
-                      printMapa(mapa)
+
+executarJogada::([Celula], Int, Int, Int, Int, Int) -> IO()
+executarJogada(mapa, linhas, colunas, minasMapa, minasJogador, qtdCelulasVazias) = do
+                      printMapa(linhas, colunas, minasMapa, minasJogador, mapa, qtdCelulasVazias)
                       putStr "\tJogadas possiveis: \n\n"
                       putStrLn("=> |  posicao | posicao a ser aberta                 | Exemplo:  A1 |  ")
                       putStrLn("=> | +posicao | posicao marcada como mina            | Exemplo: +D2 |  ")
                       putStrLn("=> | -posicao | desmarcar posicao marcada como mina  | Exemplo: -D2 |\n")
                       putStr("Digite sua jogada: ")
                       jogada <- getLine
-                      --jogada <- tratarJogada(jogada, linhas, colunas, minas, mapa)
+                      --tratarJogada(jogada, linhas, colunas, minas, minasJogador, mapa, qtdCelulasVazias)
                       --tratarJogada("")
                       putStr("")
--}
+
 -- terminoPartida : Solicitar se ele quer jogar de novo
-terminoPartida:: IO ()
-terminoPartida = do
+terminaPartida:: IO ()
+terminaPartida = do
                  putStr "Deseja jogar novamente('S'/'s','N'/'n'): "
                  jogarDeNovo <- getChar
                  putStr("\n")
@@ -250,66 +256,149 @@ terminoPartida = do
                     else do
                       if((jogarDeNovo == 'N')||(jogarDeNovo == 'n'))
                         then do
+                          putStrLn "\n\n--------------------------------------------------------------------------\n"
+                          putStrLn "--------------------------------------------------------------------------\n\n"
                           return()
                         else do
                           putStr "Digite S para jogar novamente e N para sair!!!\n"
                           getChar
-                          terminoPartida
+                          terminaPartida
                           putStr("")
-
-{-          
-tratarJogada:: String -> Int -> Int -> Int -> [Celula] -> IO() String
-tratarJogada jogada linhas colunas minas mapa = 
+    {-      
+tratarJogada:: (String, Int, Int, Int, Int, [Celula], Int) -> IO() String
+tratarJogada(jogada, linhas, colunas, minasMapa, minasJogador, mapa, qtdCelulasVazias) = 
                   do
                   if(length(jogada) >= 2)
                     then do
                       let priPosicao = ord(jogada!!0)
-                      let segPosicao = ord(jogada!!1)
+                      let segPosicao = ord(jogada!!1)  -- CODIGOS DOS CARACTERES
                       if((priPosicao >= 65) && (priPosicao <= 90))   -- São as letras maisculas
                         then do
-                          let codLinha = analisaStringNumero(retornaSubstring(jogada,0,1)) -- Remove a letra
-                          let codColuna = priPosicao
-                          -- verifica se a celula ta fechada - Se tiver não faz a jogada e fala pro usuario
-                          -- Senao verifica se ta 
-                          let celulaMapa = retornaCelulaPelaMatriz(codLinha,codColuna,mapa)
-                          obterMarcacaoMinaJogador
-                          if(obterFechado(celulaMapa))
+                          let testeNumerico = analisaStringNumero(retornaSubstring(jogada,0,1)  -- Remove o caractere da letra e faz a analise se é numero Se nao for, o valor é -100, o contrário é valor corretamente
+                          if(testeNumerico >= 0)
                             then do
-                              putStrLn("A celula ja esta fechada, escolha outra celula para abrir!")
-                              getChar -- descarta o Enter
-                              executarJogada(mapa, linhas, colunas, minas)
-                            else do
-                              if(obterMarcacaoMinaJogador(mapa)) -- Tentativa de abrir uma celula marcada como mina pelo jogador
+                              -- VALOR CORRETO
+                              let codLinha = analisaStringNumero(retornaSubstring(jogada,0,1)) -- Remove a letra
+                              let codColuna = (priPosicao - 65)   -- menos a posicao do 'A'
+                              let celulaMapa = retornaCelulaPelaMatriz(codLinha,codColuna,mapa)
+                              if(obterFechado(celulaMapa))
                                 then do
-                                  putStrLn("A celula ja esta marcada como mina pelo jogador, escolha outra celula para abrir ou desmarque esta!")
+                                  putStrLn("A celula ja esta fechada, escolha outra celula para abrir!")
                                   getChar -- descarta o Enter
-                                  executarJogada(mapa, linhas, colunas, minas)
+                                  executarJogada(mapa, linhas, colunas, minasMapa, minasJogador, qtdCelulasVazias)
                                 else do
-                                  if(obterEhMina(mapa))
+                                  if(obterMarcacaoMinaJogador(mapa)) -- Tentativa de abrir uma celula marcada como mina pelo jogador
                                     then do
-                                      putStrLn("A celula tinha uma mina, infelizmente voce perdeu.")
-                                      putStrLn("\n\n \t \t GAME OVER !!! \n\n")
+                                      putStrLn("A celula ja esta marcada como mina pelo jogador, escolha outra celula para abrir ou desmarque esta!")
                                       getChar -- descarta o Enter
-                                      executarJogada(mapa, linhas, colunas, minas)
+                                      executarJogada(mapa, linhas, colunas, minasMapa, minasJogador, qtdCelulasVazias)
                                     else do
-
-
-
-                          -- Posicao a ser aberta
-                        else do
-                          if(priPosicao == 43)  -- '+' => Marcar mina
-                            then do
-                              if((priPosicao >= 65) && (priPosicao <= 90))-- São as letras maisculas
-                                then do
-                                  -- Posicao a ser aberta
-                                else do
-                                  --  ERRO NA PASSAGEM DE PARAMETRO
+                                      if(obterEhMina(mapa))
+                                        then do                       -- DERROTA
+                                          -- CRIAR METODO REVELAMAPA QUE MOSTRA O FINAL DE LIBERAR TUDO OU PERDER
+                                          -- CRIAR METODO REVELAMAPA QUE MOSTRA O FINAL DE LIBERAR TUDO OU PERDER
+                                          putStrLn("A celula tinha uma mina, infelizmente voce perdeu.")
+                                          putStrLn("\n\n \t \t GAME OVER !!! \n\n")
+                                          getChar -- descarta o Enter
+                                          terminaPartida
+                                        else do                       -- Jogada válida
+                                          if(qtdCelulasVazias > 0)
+                                            then do
+                                              mapa <- atualizaMapa(mapa, mapaAtualizado,  linhas, colunas, minasMapa, minasJogador, qtdCelulasVazias, codLinha, codColuna, status)
+                                            else do                   -- VITORIA
+                                              -- CRIAR METODO REVELAMAPA QUE MOSTRA O FINAL DE LIBERAR TUDO OU PERDER
+                                              -- CRIAR METODO REVELAMAPA QUE MOSTRA O FINAL DE LIBERAR TUDO OU PERDER
+                                              putStrLn("\n\n \t \t Você venceu, parabéns!!!!")
+                                              putStrLn("Você venceu, parabéns!!!! \n\n")
+                                              getChar -- descarta o Enter
+                                              terminaPartida
                             else do
-                              if(priPosicao == 45)  -- '-'
+                              PARAMETROS ERRADOS
+                              putStr("Erro na passagem de parametros, utilize letras MAIUSCULAS para a identificacao das colunas e os numeros para a linha corretamente.\n")
+                        else do
+                          if(length(jogada) >= 3) -- Simbolo, letra, Numero
+                            then do
+                              if(priPosicao == 43)  -- '+' => Marcar mina
                                 then do
-                                  dada
+                                  if((segPosicao >= 65) && (segPosicao <= 90))-- São as letras maisculas
+                                    then do
+                                      let testeNumerico = analisaStringNumero(retornaSubstring(jogada,0,2)
+                                      -- TESTA SE A CONVERSAO PRA NUMERO É VALIDA, SE NÃO FOR É PORQUE TEM CARACTERE DIFERENTE DE ALGARISMO
+                                      if(testeNumerico >= 0)
+                                        then do
+                                          -- INDICE DE LINHA VALIDA --> testeIndiceValido(i, j, linhas, colunas)
+
+                                          let codLinha = analisaStringNumero(retornaSubstring(jogada,0,2)) -- Remove a letra
+                                          let codColuna = (segPosicao - 65)   -- menos a posicao do 'A'
+                                          if(testeIndiceValido(codLinha, codColuna, linhas, colunas))
+                                            then do
+                                              let celulaMapa = retornaCelulaPelaMatriz(codLinha,codColuna,mapa)
+                                              if(obterFechado(celulaMapa))
+                                                then do
+                                                  putStrLn("A celula ja esta fechada, escolha outra celula para marcar como mina!")
+                                                  getChar -- descarta o Enter
+                                                  executarJogada(mapa, linhas, colunas, minasMapa, minasJogador, qtdCelulasVazias)
+                                                else do
+                                                  if(obterMarcacaoMinaJogador(mapa)) -- Tenta Marcar célula já marcada como mina
+                                                    then do
+                                                      putStrLn("A celula ja esta marcada como mina pelo jogador, escolha outra celula para marcar ou desmarque esta!")
+                                                      getChar -- descarta o Enter
+                                                      executarJogada(mapa, linhas, colunas, minasMapa, minasJogador, qtdCelulasVazias)
+                                                    else do
+                                                      if(minasJogador > 0)
+                                                        then do
+                                                          putStrLn("A quantidade de marcações de minas acabaram, remova de outras celulas se quiser marcar esta!")
+                                                          getChar -- descarta o Enter
+                                                          executarJogada(mapa, linhas, colunas, minasMapa, minasJogador, qtdCelulasVazias)
+                                                        else do
+                                                          mapa <- atualizaMapa(mapa, mapaAtualizado,  linhas, colunas, minasMapa, (minasJogador - 1), qtdCelulasVazias, codLinha, codColuna, status)
+                                                          putStrLn("A celula foi marcada como mina!")
+                                                          getChar -- descarta o Enter
+                                            else do
+                                              -- INDICES INVALIDOS
+                                              putStrLn("indice invalido")
+                                        else do
+                                          --CARACTERE INCORRETO APOS O SIMBOLO E A LETRA
+                                          putStr("Erro na passagem de parametros, utilize letras MAIUSCULAS para a identificacao das colunas.\n")
+                                    else do
+                                      putStr("Erro na passagem de parametros, utilize letras MAIUSCULAS para a identificacao das colunas.\n")
                                 else do
-                                  --  ERRO NA PASSAGEM DE PARAMETRO
+                                  if(priPosicao == 45)  -- '-' => Desmarcar mina do jogador
+                                    then do
+                                      if((segPosicao >= 65) && (segPosicao <= 90))-- São as letras maisculas
+                                        then do
+                                          let codLinha = analisaStringNumero(retornaSubstring(jogada,0,2)) 
+                                          let codColuna = (segPosicao - 65)   -- menos a posicao do 'A'
+                                          let celulaMapa = retornaCelulaPelaMatriz(codLinha,codColuna,mapa)
+                                          if(obterFechado(celulaMapa))
+                                            then do
+                                              putStrLn("A celula ja esta fechada, escolha uma celula marcada para desmarcar a mina presente!")
+                                              getChar -- descarta o Enter
+                                              executarJogada(mapa, linhas, colunas, minasMapa, minasJogador, qtdCelulasVazias)
+                                            else do
+                                              if(obterMarcacaoMinaJogador(mapa)) -- Desmarcacao da mina
+                                                then do
+                                                  mapa <- atualizaMapa(mapa, mapaAtualizado,  linhas, colunas, minasMapa, (minasJogador + 1), qtdCelulasVazias, codLinha, codColuna, status)
+                                                  putStrLn("A celula foi desmarcada como mina!")
+                                                  getChar -- descarta o Enter
+                                                  executarJogada(mapa, linhas, colunas, minasMapa, minasJogador, qtdCelulasVazias)
+                                                else do
+                                                  if(minasJogador > 0)
+                                                    then do
+                                                      putStrLn("A quantidade de marcações de minas acabaram, remova de outras celulas se quiser marcar esta!")
+                                                      getChar -- descarta o Enter
+                                                      executarJogada(mapa, linhas, colunas, minasMapa, minasJogador, qtdCelulasVazias)
+                                                    else do
+                                                      mapa <- atualizaMapa(mapa, mapaAtualizado,  linhas, colunas, minasMapa, (minasJogador - 1, qtdCelulasVazias, codLinha, codColuna, status)
+                                                      putStrLn("A celula foi marcada como mina!")
+                                                      getChar -- descarta o Enter
+                                        else do
+                                          putStr("Erro na passagem de parametros, utilize letras MAIUSCULAS para a identificacao das colunas.\n")
+                                    else do
+                                      putStr("Erro na passagem de parametros, utilize letras MAIUSCULOS para a identificacao das colunas.\n")
+                            else do
+                              PARAMETROS ERRADOS
+                              putStr("Erro na passagem de parametros. Quantidade de caracteres incorreta.\n")
                     else do
                       putStr("Erro na passagem de parametros, digite conforme o exemplos citado.\n")
                       putStr("Digite sua jogada: ")
@@ -317,6 +406,18 @@ tratarJogada jogada linhas colunas minas mapa =
                       tratarJogada(jogada)
                       --  ERRO NA PASSAGEM DE PARAMETRO: Parametro incorreto
 -}
+
+-- Retorna se os indices passados são válidos em relação ao campo minado
+testeIndiceValido::(Int, Int, Int, Int) -> Bool
+testeIndiceValido(i, j, linhas, colunas) = 
+                          do
+                            if((i >= 0 && i < linhas) && (j >= 0 && j < colunas))
+                              then do
+                                True
+                              else do
+                                False
+
+
 -- Retorna a conversão de uma String pra Int e caso ocorra erro retorna -100.
 analisaStringNumero:: String -> IO Int
 analisaStringNumero(texto) = do
@@ -369,12 +470,12 @@ retornaCelulaPelaMatriz (i, j, lis) =
 funcTeste:: String -> Int
 funcTeste text = read(text)::Int
 
-montarMapa:: Int -> Int -> Int -> IO [Celula]
-montarMapa x y z = do
+montarMapa::(Int, Int, Int, Int) -> IO [Celula]
+montarMapa(linhas, colunas, minas, qtdCelulasVazias) = do
                    putStrLn "montar Mapa:"
-                   let mapa = [(Celula "*" r c False False False 0) | r <- [0..(x - 1)] , c <- [0..(y - 1)]]--let mapa = [(Celula "*" x y False False False 0)];
+                   let mapa = [(Celula "*" r c False False False 0) | r <- [0..(linhas - 1)] , c <- [0..(colunas - 1)]]--let mapa = [(Celula "*" x y False False False 0)];
                    --print(show(length(mapa))++ " --  elementos na matriz.")
-                   mapa <- posicionarMinas(0, (x*y), 0, z, [], mapa, [])
+                   mapa <- posicionarMinas(0, (linhas*colunas), 0, minas, [], mapa, [])
                    -- Teste posicionamento de minas:    mapa <- posicionarMinas(0, (x*y), 0, z, [1,2,3,4,6,9], mapa, [])
                    --print(retornaVizinhos(0, (retornaCelulaPelaMatriz(0,0,mapa)), x, y, mapa, 0))
                    --print(mapa)
@@ -385,20 +486,22 @@ montarMapa x y z = do
                    aux <- retornaVizinhos(0, (retornaCelulaPelaMatriz(1,2,mapa)), x, y, mapa, 0)
                    putStrLn("1,2: "++show(aux))-}
                    --retornaVizinhos(opcao, cell, lins, cols, mapa, contador) =
-                   mapa <- calculaVizinhos(0, (x*y), x, y, mapa, mapa, [])
+                   mapa <- calculaVizinhos(0, (linhas*colunas), linhas, colunas, mapa, mapa, [])
                    --print(mapa!!2)
                    --print(retornaCelulaPelaMatriz(0,2,mapa))
                    --mapa <- posicionarMinas(0, (x*y), 0, z, [1,4,7,12,13,17,18,19], mapa, [])
-                   printMapa x y z mapa
+                   printMapa(linhas, colunas, minas, 0, mapa, qtdCelulasVazias)
                    return(mapa)   -- Retornando uma lista de células
 
-printMapa:: Int -> Int -> Int -> [Celula] -> IO()
-printMapa x y z mapa = do
+printMapa:: (Int, Int, Int, Int, [Celula], Int) -> IO()
+printMapa(linhas, colunas, minasMapa, minasJogador, mapa, qtdCelulasVazias) = do
                        system "clear"     -- no windows eh 'system "cls"'
-                       print(show(length(mapa))++ " --  elementos na matriz.")
+                       --print(show(length(mapa))++ " --  elementos na matriz.")
                        putStrLn "Imprimindo mapa:"
                        putStrLn "\n--------------------------------------------------------------------------\n"
-                       forLoopPrintMapa(0, (x*y), x, y, 0, mapa)
+                       forLoopPrintMapa(0, (linhas*colunas), linhas, colunas, 0, mapa)
+                       putStr ("\n\t Minas do jogador: "++show(minasJogador))
+                       putStr ("\n\t Celulas vazias: "++show(qtdCelulasVazias))
                        putStrLn "\n--------------------------------------------------------------------------\n"
 
 {-
