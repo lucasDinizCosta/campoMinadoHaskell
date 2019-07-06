@@ -72,10 +72,10 @@ type IdLinha = Int
 type IdColuna = Int
 type Fechado = Bool     -- Contrasta os vizinhos e não pode mais ser visitado
 type Mina = Bool        -- A celula possui mina
-type Estado = Bool      -- False => não tem mina marcada pelo jogador, True => tem minha marcada pelo jogador
+type MarcacaoMinaJogador = Bool      -- False => não tem mina marcada pelo jogador, True => tem minha marcada pelo jogador
 type Vizinho = Int      -- Quantidade de vizinhos com minas
 type Escrito = String   -- Escrito da celula que mostra o estado dela, por padrão é '*'
-data Celula = Celula Escrito IdLinha IdColuna Fechado Mina Estado Vizinho
+data Celula = Celula Escrito IdLinha IdColuna Fechado Mina MarcacaoMinaJogador Vizinho
                               deriving(Show, Eq)
 
 {-
@@ -209,6 +209,8 @@ geraMatriz = do
 --prepararJogo :: Jogadores -> IO Jogadores
 prepararJogo:: IO()
 prepararJogo = do
+               putStrLn "\n--------------------------------------------------------------------------\n"
+               putStrLn "\n-------------------              CAMPO MINADO         --------------------\n"
                putStr "Digite o numero de linhas: "
                linhas <- getLine
                putStr "Digite o numero de colunas: "
@@ -218,11 +220,12 @@ prepararJogo = do
                putStrLn (linhas ++ " " ++ colunas ++ " " ++ (show(minas)) ++ "\n")
                campoMinado <- montarMapa (read (linhas):: Int) (read (colunas):: Int) minas
                --ATIVAR JOGADA
-               executarJogada(campoMinado, read (linhas)::Int, read (colunas)::Int, minas)
+               --executarJogada(campoMinado, read (linhas)::Int, read (colunas)::Int, minas)
                putStr ""   -- Se tirar causa erro de identação
-               
+{-
 executarJogada::([Celula], Int, Int,  Int) -> IO()
 executarJogada(mapa, linhas, colunas, minas) = do
+                      printMapa(mapa)
                       putStr "\tJogadas possiveis: \n\n"
                       putStrLn("=> |  posicao | posicao a ser aberta                 | Exemplo:  A1 |  ")
                       putStrLn("=> | +posicao | posicao marcada como mina            | Exemplo: +D2 |  ")
@@ -232,8 +235,29 @@ executarJogada(mapa, linhas, colunas, minas) = do
                       --jogada <- tratarJogada(jogada, linhas, colunas, minas, mapa)
                       --tratarJogada("")
                       putStr("")
+-}
+-- terminoPartida : Solicitar se ele quer jogar de novo
+terminoPartida:: IO ()
+terminoPartida = do
+                 putStr "Deseja jogar novamente('S'/'s','N'/'n'): "
+                 jogarDeNovo <- getChar
+                 putStr("\n")
+                 if((jogarDeNovo == 'S')||(jogarDeNovo == 's'))
+                    then do
+                      getChar
+                      prepararJogo
+                      putStr("")
+                    else do
+                      if((jogarDeNovo == 'N')||(jogarDeNovo == 'n'))
+                        then do
+                          return()
+                        else do
+                          putStr "Digite S para jogar novamente e N para sair!!!\n"
+                          getChar
+                          terminoPartida
+                          putStr("")
 
-{-                      
+{-          
 tratarJogada:: String -> Int -> Int -> Int -> [Celula] -> IO() String
 tratarJogada jogada linhas colunas minas mapa = 
                   do
@@ -241,9 +265,36 @@ tratarJogada jogada linhas colunas minas mapa =
                     then do
                       let priPosicao = ord(jogada!!0)
                       let segPosicao = ord(jogada!!1)
-                      if((priPosicao >= 65) && (priPosicao <= 90))-- São as letras maisculas
+                      if((priPosicao >= 65) && (priPosicao <= 90))   -- São as letras maisculas
                         then do
-                          analisaStringNumero(String)
+                          let codLinha = analisaStringNumero(retornaSubstring(jogada,0,1)) -- Remove a letra
+                          let codColuna = priPosicao
+                          -- verifica se a celula ta fechada - Se tiver não faz a jogada e fala pro usuario
+                          -- Senao verifica se ta 
+                          let celulaMapa = retornaCelulaPelaMatriz(codLinha,codColuna,mapa)
+                          obterMarcacaoMinaJogador
+                          if(obterFechado(celulaMapa))
+                            then do
+                              putStrLn("A celula ja esta fechada, escolha outra celula para abrir!")
+                              getChar -- descarta o Enter
+                              executarJogada(mapa, linhas, colunas, minas)
+                            else do
+                              if(obterMarcacaoMinaJogador(mapa)) -- Tentativa de abrir uma celula marcada como mina pelo jogador
+                                then do
+                                  putStrLn("A celula ja esta marcada como mina pelo jogador, escolha outra celula para abrir ou desmarque esta!")
+                                  getChar -- descarta o Enter
+                                  executarJogada(mapa, linhas, colunas, minas)
+                                else do
+                                  if(obterEhMina(mapa))
+                                    then do
+                                      putStrLn("A celula tinha uma mina, infelizmente voce perdeu.")
+                                      putStrLn("\n\n \t \t GAME OVER !!! \n\n")
+                                      getChar -- descarta o Enter
+                                      executarJogada(mapa, linhas, colunas, minas)
+                                    else do
+
+
+
                           -- Posicao a ser aberta
                         else do
                           if(priPosicao == 43)  -- '+' => Marcar mina
@@ -265,35 +316,7 @@ tratarJogada jogada linhas colunas minas mapa =
                       jogada <- getLine
                       tratarJogada(jogada)
                       --  ERRO NA PASSAGEM DE PARAMETRO: Parametro incorreto
-
-analisaStringNumero:: String -> IO Bool
-analisaStringNumero(texto) = 
-                  do
-                  {catch (testaString) tratar_erro;}
-                  where
-                    testaString = do
-                    {
-                      --let aux = (read (texto):: Int)
-                      {-if(length(texto) > 0)
-                        then do
-                          if(isNumber(head(texto))==True)
-                            then do
-                              analisaStringNumero(tail(texto))
-                            else do
-                              False
-                        else do
-                          True
-                       -}
-                       False
-                    }
-                    tratar_erro = if isDoesNotExistError erro then do
-                    {
-                      True
-                    }
-                    else
-                      False -- ioError erro
-  -}
-
+-}
 -- Retorna a conversão de uma String pra Int e caso ocorra erro retorna -100.
 analisaStringNumero:: String -> IO Int
 analisaStringNumero(texto) = do
@@ -306,6 +329,43 @@ analisaStringNumero(texto) = do
                   putStrLn("Exceção encontrada")
                   return(-100)                     
 
+-- Retorna substring a partir de determinada posicao
+-- parada: Caracteres a serem removidos da String original
+retornaSubstring:: (String, Int, Int) -> String
+retornaSubstring(texto, indice, parada) = do
+        if(indice >= parada)
+          then do 
+            texto;
+          else do
+            retornaSubstring(tail(texto), (indice + 1), parada)
+
+-- Alterar o mapa com base na jogada escolhida
+{-alterarMapa:: [Celula] -> [Celula] Int -> Int -> Int  -> Int -> Int -> Int -> IO() String
+alterarMapa mapa mapaAtualizado linhas colunas minas linhaEscolhida colunaEscolhida 0 = -- opcao da Jogada 1: Abrir a celula
+                                  do
+                                    let celulaConsultada = retornaCelulaPelaMatriz(linhaEscolhida, colunaEscolhida, mapa)
+                                    if(obterFechado(celulaConsultada))
+                                      then do -- Não executa a jogada, pois a celula já ta fechada
+                                        
+                                      else do
+
+alterarMapa mapa mapaAtualizado linhas colunas minas linhaEscolhida colunaEscolhida 1 = -- opcao da Jogada 2: Posicionar mina do jogador em cima
+                                  do
+
+alterarMapa mapa mapaAtualizado linhas colunas minas linhaEscolhida colunaEscolhida 2 = -- -- opcao da Jogada 3: Remove a marcação de mina
+                                  do
+
+-- alterarMapa mapa mapaAtualizado linhas colunas minas linhaEscolhida colunaEscolhida opcao =
+
+
+-- RETIRAR PQ JÁ TEM LÁ EMBAIXO
+retornaCelulaPelaMatriz:: (Int, Int, [Celula]) -> Celula
+retornaCelulaPelaMatriz (i, j, lis) = 
+              do
+              let col = (obterIDColuna (last (lis)) + 1)
+              let indexVetor = (j + i * col)
+              obterCelula(indexVetor, lis)
+-}
 funcTeste:: String -> Int
 funcTeste text = read(text)::Int
 
@@ -346,7 +406,7 @@ printMapa x y z mapa = do
   a matriz do campo minado no console.
 -}
 forLoopPrintMapa :: (Int, Int, Int, Int, Int, [Celula]) -> IO()
-forLoopPrintMapa(i, tamanho, lins, cols, opcao, ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms)) =
+forLoopPrintMapa(i, tamanho, lins, cols, opcao, ((Celula escrito idLinha idColuna fechado mina marcacaoMinaJogador vizinho):ms)) =
       do
         if(opcao == 0)                                      -- Imprime os titulos das colunas
           then do
@@ -354,20 +414,20 @@ forLoopPrintMapa(i, tamanho, lins, cols, opcao, ((Celula escrito idLinha idColun
               then do
                  putStr ("\t ")
                  putStr ("    | A | ")
-                 forLoopPrintMapa((i + 1), tamanho, lins, cols, opcao, ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms))
+                 forLoopPrintMapa((i + 1), tamanho, lins, cols, opcao, ((Celula escrito idLinha idColuna fechado mina marcacaoMinaJogador vizinho):ms))
               else
                 if(i < cols)
                   then do
                     putStr ([(chr(ord ('A') + i))]++" | ")    -- Coloca o caractere corespondente a coluna
-                    forLoopPrintMapa((i + 1), tamanho, lins, cols, opcao, ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms))
+                    forLoopPrintMapa((i + 1), tamanho, lins, cols, opcao, ((Celula escrito idLinha idColuna fechado mina marcacaoMinaJogador vizinho):ms))
                 else do                                       -- Terminou de escrever o titulo das linhas, volta no começo com a lista cheia pra escrever as colunas
                     putStrLn ("\n")
-                    forLoopPrintMapa(0, tamanho, lins, cols, 1, ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms))
+                    forLoopPrintMapa(0, tamanho, lins, cols, 1, ((Celula escrito idLinha idColuna fechado mina marcacaoMinaJogador vizinho):ms))
         else do
           if(opcao == 1)                                      -- Imprime a linha e depois vai pra opcao 2 pra imprimir os elementos de cada linha
            then do 
              putStr ("\t " ++ show(idLinha) ++ " - | ")
-             forLoopPrintMapa(0, tamanho, lins, cols, 2, ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms))
+             forLoopPrintMapa(0, tamanho, lins, cols, 2, ((Celula escrito idLinha idColuna fechado mina marcacaoMinaJogador vizinho):ms))
           else do
             if(opcao == 2)                                    -- Imprime elementos da linha
               then do
@@ -379,7 +439,7 @@ forLoopPrintMapa(i, tamanho, lins, cols, opcao, ((Celula escrito idLinha idColun
                         forLoopPrintMapa((i + 1), tamanho, lins, cols, 2, ms)
                     else do
                       putStr("\n")
-                      forLoopPrintMapa(0, tamanho, lins, cols, 1, ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms))
+                      forLoopPrintMapa(0, tamanho, lins, cols, 1, ((Celula escrito idLinha idColuna fechado mina marcacaoMinaJogador vizinho):ms))
                 else do                                        -- Chegou no último elemento da lista
                   putStr(escrito ++ " | ")                     -- Escrito do ultimo elemento
                   putStrLn("\n\n\t Impressao do mapa concluida com sucesso!!!")
@@ -406,14 +466,14 @@ listaAleatoria (x:xs) qtd listaSorteada =
                           return(sort(listaSorteada))--return ()
 
 posicionarMinas :: (Int, Int, Int, Int, [Int], [Celula], [Celula]) -> IO [Celula]  -- linha, coluna, mapa
-posicionarMinas(i, tamanho, opcao, qtdMinas, sorteados, ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms), mapaAtualizado) = 
+posicionarMinas(i, tamanho, opcao, qtdMinas, sorteados, ((Celula escrito idLinha idColuna fechado mina marcacaoMinaJogador vizinho):ms), mapaAtualizado) = 
                    do
                      if(opcao == 0)                     -- Sorteia as posições
                       then do
                         putStrLn "posicionar Minas:"
                         sorteados <- (listaAleatoria  [0..(tamanho - 1)] qtdMinas [])
                         --print("Sorteados("++show(length(sorteados))++"): "++show(sorteados))
-                        posicionarMinas(i, tamanho, 1, qtdMinas, sorteados, ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms), mapaAtualizado)
+                        posicionarMinas(i, tamanho, 1, qtdMinas, sorteados, ((Celula escrito idLinha idColuna fechado mina marcacaoMinaJogador vizinho):ms), mapaAtualizado)
                       else do                           -- Acerta o campo minado atribuindo as posicoes sorteadas na opcao 1
                         --putStrLn("\n i = "++show(i)++"\n")
                         --putStrLn("\nTam ms: "++ show(length(ms))++" -- Estrutura: "++show(ms)++"\n")
@@ -439,15 +499,15 @@ posicionarMinas(i, tamanho, opcao, qtdMinas, sorteados, ((Celula escrito idLinha
                                  if((i == (tamanho - 1)) && (length(caudaLista) == 0) && (i == cabecaLista))    -- Tratando erro
                                   then do
                                     --putStrLn("Excessao")
-                                    return((mapaAtualizado ++ [(Celula escrito idLinha idColuna fechado True estado vizinho)]))
+                                    return((mapaAtualizado ++ [(Celula escrito idLinha idColuna fechado True marcacaoMinaJogador vizinho)]))
                                   else do
                                     if(i == cabecaLista)
                                       then do         -- Só remove da lista de sorteados se o elemento estiver na cabeça da lista, em seguida é passado a cauda
-                                        posicionarMinas((i + 1), tamanho, 1, qtdMinas, caudaLista, ms, (mapaAtualizado ++ [(Celula escrito idLinha idColuna fechado True estado vizinho)]))
+                                        posicionarMinas((i + 1), tamanho, 1, qtdMinas, caudaLista, ms, (mapaAtualizado ++ [(Celula escrito idLinha idColuna fechado True marcacaoMinaJogador vizinho)]))
                                       else do
-                                        posicionarMinas((i + 1), tamanho, 1, qtdMinas, sorteados, ms, (mapaAtualizado ++ [(Celula escrito idLinha idColuna fechado mina estado vizinho)]))
+                                        posicionarMinas((i + 1), tamanho, 1, qtdMinas, sorteados, ms, (mapaAtualizado ++ [(Celula escrito idLinha idColuna fechado mina marcacaoMinaJogador vizinho)]))
                               else do                 -- Adiciona o restante das celulas, e retorna
-                                let aux2 = ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms)
+                                let aux2 = ((Celula escrito idLinha idColuna fechado mina marcacaoMinaJogador vizinho):ms)
                                 let aux = (mapaAtualizado ++ aux2)
                                 return(aux)           
                           else do
@@ -458,17 +518,17 @@ posicionarMinas(i, tamanho, opcao, qtdMinas, sorteados, ((Celula escrito idLinha
 
 -- Realiza o calculo para cada célula da quantidade de vizinhos que possuem minas em volta
 calculaVizinhos:: (Int, Int, Int, Int, [Celula], [Celula], [Celula]) -> IO [Celula]
-calculaVizinhos(i, tamanho, lins, cols, ((Celula escrito idLinha idColuna fechado mina estado vizinho):ms), mapaVerificacao, mapaAtualizado) =
+calculaVizinhos(i, tamanho, lins, cols, ((Celula escrito idLinha idColuna fechado mina marcacaoMinaJogador vizinho):ms), mapaVerificacao, mapaAtualizado) =
                   do
                   if(i < tamanho)
                     then do
-                      aux <- (retornaVizinhos(0, (Celula escrito idLinha idColuna fechado mina estado vizinho), lins, cols, mapaVerificacao, 0))
+                      aux <- (retornaVizinhos(0, (Celula escrito idLinha idColuna fechado mina marcacaoMinaJogador vizinho), lins, cols, mapaVerificacao, 0))
                       putStrLn("i: "++ show(i) ++ " - ms - "++show(length(ms))++"- ["++show(idLinha)++" , "++show(idColuna)++"]: "++ show(aux))
                       if(i /= (tamanho - 1))
                         then do
-                          calculaVizinhos((i+1), tamanho, lins, cols, ms, mapaVerificacao, (mapaAtualizado ++ [(Celula escrito idLinha idColuna fechado mina estado aux)]))
+                          calculaVizinhos((i+1), tamanho, lins, cols, ms, mapaVerificacao, (mapaAtualizado ++ [(Celula escrito idLinha idColuna fechado mina marcacaoMinaJogador aux)]))
                         else do             -- Tratamento de erro de recursão do ultimo elemento
-                          return(mapaAtualizado ++ [(Celula escrito idLinha idColuna fechado mina estado aux)])
+                          return(mapaAtualizado ++ [(Celula escrito idLinha idColuna fechado mina marcacaoMinaJogador aux)])
                     else do
                       print("FFFFF")
                       return(mapaAtualizado)
@@ -583,22 +643,22 @@ tratarMinas x y = do
 -}
 
 obterEscrito :: Celula -> String
-obterEscrito (Celula escrito idLinha idColuna fechado mina estado vizinho) = escrito
+obterEscrito (Celula escrito idLinha idColuna fechado mina marcacaoMinaJogador vizinho) = escrito
 
 obterIDLinha :: Celula -> Int
-obterIDLinha (Celula escrito idLinha idColuna fechado mina estado vizinho) = idLinha
+obterIDLinha (Celula escrito idLinha idColuna fechado mina marcacaoMinaJogador vizinho) = idLinha
 
 obterIDColuna :: Celula -> Int
-obterIDColuna (Celula escrito idLinha idColuna fechado mina estado vizinho) = idColuna
+obterIDColuna (Celula escrito idLinha idColuna fechado mina marcacaoMinaJogador vizinho) = idColuna
 
 obterFechado :: Celula -> Bool
-obterFechado (Celula escrito idLinha idColuna fechado mina estado vizinho) = fechado
+obterFechado (Celula escrito idLinha idColuna fechado mina marcacaoMinaJogador vizinho) = fechado
 
 obterEhMina :: Celula -> Bool
-obterEhMina (Celula escrito idLinha idColuna fechado mina estado vizinho) = mina
+obterEhMina (Celula escrito idLinha idColuna fechado mina marcacaoMinaJogador vizinho) = mina
 
-obterEstado :: Celula -> Bool
-obterEstado (Celula escrito idLinha idColuna fechado mina estado vizinho) = estado
+obterMarcacaoMinaJogador :: Celula -> Bool
+obterMarcacaoMinaJogador (Celula escrito idLinha idColuna fechado mina marcacaoMinaJogador vizinho) = marcacaoMinaJogador
 
 obterVizinho :: Celula -> Int
-obterVizinho (Celula escrito idLinha idColuna fechado mina estado vizinho) = vizinho
+obterVizinho (Celula escrito idLinha idColuna fechado mina marcacaoMinaJogador vizinho) = vizinho
