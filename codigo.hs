@@ -63,82 +63,13 @@ listaEmbaralhada:: [a] -> [a]
 listaEmbaralhada lis = transform(shuffle lis)
 
 
--- Controle de estado
-estadoInterface = 0
-
-
-{-
-    FUNÇÕES DE TRABALHO COM INTERFACE
--}
-
-main :: IO ()
-main = do
-  initGUI
-
-  -- Cria uma nova janela
-  window <- windowNew
-
-  -- Conecta ao evento de "destruição" da janela.
-  -- O evento ocorre quando é chamado o "widgetDestroy" na janela,
-  -- ou seo usuário fecha a janela.
-
-  window `onDestroy` mainQuit
-
-  -- Define os parametros da janela
-  set window [ windowDefaultWidth := 300, windowDefaultHeight := 300,
-               windowTitle := "Campo Minado", containerBorderWidth := 20]
-
-  window `on` focus $ \dirtype -> putStrLn "Janela criada!" >> return False
-
-  --removeIndiceLista :: Int -> [a] -> [a]
-  --removeIndiceLista n lista = delete (lista!!n) lista
-
-  -- Cria um agrupamento de botões
-  hbuttonbox <- hButtonBoxNew
-
-  set window [ containerChild := hbuttonbox ]
-
-  button1 <- buttonNewWithLabel "Console"
-  button2 <- buttonNewWithLabel "Interface Gráfica"
-  button3 <- buttonNewWithLabel "Three"
-
-  onClicked button1 (prepararJogo)  -- Atribuindo função a um botão
-  onClicked button2 (print"Funcionou")  -- Atribuindo função a um botão
-  --onClicked button1 $ do
-  --onClicked button3 $ do
-    --          teste
-            --(print(removeIndiceLista 0 listaTeste))
-
-  -- Add each button to the button box with the default packing and padding
-  set hbuttonbox [ containerChild := button
-                 | button <- [button1, button2, button3] ]
-
-  -- This sets button3 to be a so called 'secondary child'. When the layout
-  -- stlye is ButtonboxStart or ButtonboxEnd, the secondary children are
-  -- grouped seperately from the others. Resize the window to see the effect.
-  --
-  -- This is not interesting in itself but shows how to set child attributes.
-  -- Note that the child attribute 'buttonBoxChildSecondary' takes the
-  -- button box container child 'button3' as a parameter.
-  set hbuttonbox [ buttonBoxLayoutStyle := ButtonboxStart
-                 , buttonBoxChildSecondary button3 := True ]
-
-  -- The final step is to display everything (the window and all the widgets
-  -- contained within it)
-  widgetShowAll window
-
-  -- All Gtk+ applications must run the main event loop. Control ends here and
-  -- waits for an event to occur (like a key press or mouse event).
-  mainGUI
-
-
 {-
     FUNCIONALIDADES DO CAMPO MINADO
 -}
 
--- função que prepara o início do jogo
-prepararJogo:: IO()
-prepararJogo = do
+-- função que inicia o jogo via console
+iniciar:: IO()
+iniciar = do
                system "clear"     -- no windows eh 'system "cls"'
                putStrLn "\n--------------------------------------------------------------------------\n"
                putStrLn "------ Trabalho de Linguagem de programação (2019/1):   ------------------\n"
@@ -182,7 +113,7 @@ terminaPartida = do
                     then do
                       putStrLn("Pressione ENTER pra continuar!")
                       getChar -- descarta o Enter
-                      prepararJogo
+                      iniciar
                       putStr("")
                     else do
                       if((jogarDeNovo == 'N')||(jogarDeNovo == 'n'))
@@ -197,6 +128,9 @@ terminaPartida = do
                           terminaPartida
                           putStr("")
 
+{-
+  Guia todo o núcleo da partida, desde o controle das alterações do mapa, até a condições de vitória ou perda do jogador. 
+-}                        
 tratarJogada:: (String, Int, Int, Int, Int, [Celula], Int) -> IO()
 tratarJogada(jogada, linhas, colunas, minasMapa, minasJogador, mapa, qtdCelulasVazias) = 
     do
@@ -245,8 +179,8 @@ tratarJogada(jogada, linhas, colunas, minasMapa, minasJogador, mapa, qtdCelulasV
                                       executarJogada(mapa, linhas, colunas, minasMapa, minasJogador, (qtdCelulasVazias - 1))
                                     else do                   -- VITORIA
                                       mapa <- (atualizaMapa(mapa, [], celulaMapa, linhas, colunas, minasMapa, minasJogador, (qtdCelulasVazias - 1), 0))
-                                      mapa <- (revelarMapa(mapa, [], linhas, colunas, minasMapa, minasJogador, qtdCelulasVazias))
-                                      printMapa(linhas, colunas, minasMapa, minasJogador, mapa, qtdCelulasVazias)
+                                      mapa <- (revelarMapa(mapa, [], linhas, colunas, minasMapa, minasJogador, (qtdCelulasVazias - 1)))
+                                      printMapa(linhas, colunas, minasMapa, minasJogador, mapa, (qtdCelulasVazias - 1))
                                       putStrLn("\n\n \t \tVocê venceu, parabéns!!!!")
                                       putStrLn("\t \tVocê venceu, parabéns!!!! \n\n")
                                       putStrLn("Pressione ENTER pra continuar!")
@@ -546,7 +480,8 @@ printMapa(linhas, colunas, minasMapa, minasJogador, mapa, qtdCelulasVazias) = do
                        system "clear"     -- no windows eh 'system "cls"'
                        --print(show(length(mapa))++ " --  elementos na matriz.")
                        putStrLn "Imprimindo mapa:"
-                       putStrLn "\n--------------------------------------------------------------------------\n"
+                       putStrLn "\n--------------------------------------------------------------------------"
+                       putStrLn "-------------------            CAMPO MINADO           --------------------\n"
                        forLoopPrintMapa(0, (linhas*colunas), linhas, colunas, 0, mapa)
                        putStr ("\n\t Minas do jogador: "++show(minasJogador))
                        putStr ("\n\t Minas do campo: "++show(minasMapa))
@@ -617,6 +552,8 @@ listaAleatoria (x:xs) qtd listaSorteada =
                         else do
                           return(sort(listaSorteada))--return ()
 
+
+-- Realiza o posicionamento das minas no mapa
 posicionarMinas :: (Int, Int, Int, Int, [Int], [Celula], [Celula]) -> IO [Celula]  -- linha, coluna, mapa
 posicionarMinas(i, tamanho, opcao, qtdMinas, sorteados, ((Celula escrito idLinha idColuna fechado mina marcacaoMinaJogador vizinho):ms), mapaAtualizado) = 
                    do
@@ -624,21 +561,14 @@ posicionarMinas(i, tamanho, opcao, qtdMinas, sorteados, ((Celula escrito idLinha
                       then do
                         putStrLn "posicionar Minas:"
                         sorteados <- (listaAleatoria  [0..(tamanho - 1)] qtdMinas [])
-                        --print("Sorteados("++show(length(sorteados))++"): "++show(sorteados))
                         posicionarMinas(i, tamanho, 1, qtdMinas, sorteados, ((Celula escrito idLinha idColuna fechado mina marcacaoMinaJogador vizinho):ms), mapaAtualizado)
                       else do                           -- Acerta o campo minado atribuindo as posicoes sorteadas na opcao 1
-                        --putStrLn("\n i = "++show(i)++"\n")
-                        --putStrLn("\nTam ms: "++ show(length(ms))++" -- Estrutura: "++show(ms)++"\n")
                         if(i < tamanho) -- Adiciona
                           then do
-                            --putStrLn("\n sorteados tamanho: "++show(length(sorteados))++"\n")
                             if(length(sorteados) /= 0) -- Passa pelas posicoes sorteadas
                               then do
                                  let cabecaLista = head sorteados
                                  let caudaLista = tail sorteados
-                                 --putStrLn(show(i)++" i--head "  ++ show(cabecaLista))
-                                 --putStrLn(show(i)++" i--cauda " ++ show(caudaLista) ++ " tam: " ++ show(length(caudaLista)))
-                                 --putStrLn("Tam mapaAtualizado: "++ show(length(mapaAtualizado))++" -- Estrutura: "++show(mapaAtualizado))
                                  {-
                                     O if abaixo trata o erro na recursao finalizando e devolvendo o mapa alterado:
                                     *** Exception: codigo.hs:(307,1)-(336,50): Non-exhaustive patterns in function posicionarMinas
@@ -650,7 +580,6 @@ posicionarMinas(i, tamanho, opcao, qtdMinas, sorteados, ((Celula escrito idLinha
                                  -}
                                  if((i == (tamanho - 1)) && (length(caudaLista) == 0) && (i == cabecaLista))    -- Tratando erro
                                   then do
-                                    --putStrLn("Excessao")
                                     return((mapaAtualizado ++ [(Celula escrito idLinha idColuna fechado True marcacaoMinaJogador vizinho)]))
                                   else do
                                     if(i == cabecaLista)
@@ -765,18 +694,6 @@ retornaCelulaPelaMatriz (i, j, lis) =
 
 obterCelula::(Int, [Celula]) -> Celula
 obterCelula(i,lis) = (lis!!i)
-
-soma:: Int ->IO Int
-soma x = do 
-         putStr("")
-         return(x + 1)
-          
-
-forLoop :: Int -> Int -> Int -> Int
-forLoop i tamanho valor =
-      if i < tamanho
-           then forLoop (i + 1) tamanho (3 + valor)
-           else valor
 
 -- Trata a quantidade de minas informada pelo jogador
 tratarMinas:: Int -> Int -> IO Int
