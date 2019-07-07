@@ -63,6 +63,10 @@ listaEmbaralhada:: [a] -> [a]
 listaEmbaralhada lis = transform(shuffle lis)
 
 
+-- Controle de estado
+estadoInterface = 0
+
+
 {-
     FUNÇÕES DE TRABALHO COM INTERFACE
 -}
@@ -82,7 +86,7 @@ main = do
 
   -- Define os parametros da janela
   set window [ windowDefaultWidth := 300, windowDefaultHeight := 300,
-               windowTitle := "Campo minado", containerBorderWidth := 20]
+               windowTitle := "Campo Minado", containerBorderWidth := 20]
 
   window `on` focus $ \dirtype -> putStrLn "Janela criada!" >> return False
 
@@ -94,11 +98,11 @@ main = do
 
   set window [ containerChild := hbuttonbox ]
 
-  button1 <- buttonNewWithLabel "One"
-  button2 <- buttonNewWithLabel "Two"
+  button1 <- buttonNewWithLabel "Console"
+  button2 <- buttonNewWithLabel "Interface Gráfica"
   button3 <- buttonNewWithLabel "Three"
 
-  onClicked button1 (print(linhas))  -- Atribuindo função a um botão
+  onClicked button1 (prepararJogo)  -- Atribuindo função a um botão
   onClicked button2 (print"Funcionou")  -- Atribuindo função a um botão
   --onClicked button1 $ do
   --onClicked button3 $ do
@@ -165,7 +169,7 @@ executarJogada(mapa, linhas, colunas, minasMapa, minasJogador, qtdCelulasVazias)
                       putStrLn("=> | -posicao | desmarcar posicao marcada como mina  | Exemplo: -D2 |\n")
                       putStr("Digite sua jogada: ")
                       jogada <- getLine
-                      tratarJogada(jogada, linhas, colunas, minas, minasJogador, mapa, qtdCelulasVazias)
+                      tratarJogada(jogada, linhas, colunas, minasMapa, minasJogador, mapa, qtdCelulasVazias)
                       putStr("")
 
 -- terminoPartida : Solicitar ao jogador se ele quer jogar de novo
