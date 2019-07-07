@@ -1,10 +1,10 @@
------------------------------------------------------------------------------------------------------------------------------
--- 										Trabalho de linguagem de programação:												-
---																															-
--- 	Tema: Implementação do campo minado em Haskell																			-
---																															-
---	Nome: Lucas Diniz da Costa		Matricula: 201465524AC																	-
--- 																															-
+----------------------------------------------------------------------------------------------------------------------------
+-- 										Trabalho de linguagem de programação:												                                         -
+--																															                                                           -  
+-- 	Tema: Implementação do campo minado em Haskell																			                                   -
+--																															                                                           -
+--	Nome: Lucas Diniz da Costa		Matricula: 201465524AC																	                                 -
+-- 																															                                                           -
 -----------------------------------------------------------------------------------------------------------------------------
 
 module CampoMinado where
@@ -19,64 +19,25 @@ import System.IO.Unsafe
 import Control.Exception
 import System.IO.Error
 import Data.Char                -- Algumas funções interessantes de caracteres
-{-  
-  Trabalhando com matrizes:
 
-  A primeira tupla define o primeiro elemento da matriz e
-  a segunda tupla define o elemento final
-  matrix 2x2
 
-  -> uma célula tem 4 vizinhos;
-  -> Jogada:
-    posicao | posicao a ser aberta                 | Exemplo: A1
-    +posicao| posicao marcada como mina            | Exemplo: +D2 =>
-    -posicao| desmarcar posicao marcada como minaa | Exemplo: -D2
-
-  -> Posicionamento das minas é sorteado
-  -> A cada iteração deve ser impressa a matriz no campo
-  -> O jogador digita o número de minas. Por exemplo:
-     Se o mapa é 4x4, o numero de bombas deve ser entre 1 e 8
-     caso o usuário digitar maior, deve ser colocado como o máximo,
-     ou seja, 8 minas
-
-  *** Ideia de sorteio da posicao das bombas:
-
-  será criada uma lista com os indices da matriz transformada em uma lista.
-  Exemplo: matrix 4x4, lista com 16 indices [0..16]
-
-  Ao sortear uma posição, o elemento deve ser removido da lista.
-  Exemplo: sorteio 8, logo a lista terá 15 elementos [0..7,9,10..16]
-  e o valor dele será convertido para o indice na matriz.
-  lista[8] = lista [] = matriz[linha][coluna]
-  linha = indice / Quantidade de elementos por linha
-  coluna = indice % Quantidade de elementos por linha
-  import Data.List
-  delete ([1..16]!!0) [1..16] => [2,3,4..16]  ==> Removendo o elemento da posição zero
-
--}
---get_matrix = array ((1,1), (2,2)) [((1,1),'A'),((1,2),'B'),((2,1),'C'),((2,2),'D')]
 
 minas = 8
 linhas = 4
 colunas = 4
-posAbertas = []
-minasMarcadas = []
 
---removeIndiceLista :: Int -> [Int] -> [Int]
-removeIndiceLista n x = (delete (x!!n) x)
 
 -- definição dos tipos dos dados
 
---type CampoMinado = [Celula]
 type IdLinha = Int
 type IdColuna = Int
-type Fechado = Bool     -- Contrasta os vizinhos e não pode mais ser visitado
-type Mina = Bool        -- A celula possui mina
+type Fechado = Bool                  -- Contrasta os vizinhos e não pode mais ser visitado
+type Mina = Bool                     -- A celula possui mina
 type MarcacaoMinaJogador = Bool      -- False => não tem mina marcada pelo jogador, True => tem minha marcada pelo jogador
-type Vizinho = Int      -- Quantidade de vizinhos com minas
-type Escrito = String   -- Escrito da celula que mostra o estado dela, por padrão é '*'
+type Vizinho = Int                   -- Quantidade de vizinhos com minas
+type Escrito = String                -- Escrito da celula que mostra o estado dela, por padrão é '*'
 data Celula = Celula Escrito IdLinha IdColuna Fechado Mina MarcacaoMinaJogador Vizinho
-                              deriving(Show, Eq)
+                              deriving(Show, Eq) -- Possibilita ao tipo de dado a utilização dos métodos de show e Eq
 
 {-
     FUNÇÕES AUXILIARES DE EMBARALHAMENTO E ALEATORIEDADE
@@ -101,37 +62,10 @@ transform x = unsafePerformIO x
 listaEmbaralhada:: [a] -> [a]
 listaEmbaralhada lis = transform(shuffle lis)
 
---getElementoAleatorioLista:: [a] -> a
---getElementoAleatorioLista lis = (listaEmbaralhada(lis))!!0
-
 
 {-
     FUNÇÕES DE TRABALHO COM INTERFACE
 -}
-muda_valor :: Int -> Int
-muda_valor x = x + 1
-
-
-teste :: IO ()
-teste = do
-    putStrLn "\tIncrementado a \'variavel\' linhas: "
-    --  Lê o valor presente no arquivo de texto e armazena em 'linhas'
-    putStrLn "Lendo o valor do arquivo de texto."
-    arq <- openFile "teste.txt" ReadMode
-    linhas <- hGetLine arq
-    putStrLn linhas
-    hClose arq
-    putStrLn ("Leitura realizada com sucesso. linhas: " ++ linhas)
-    --putStrLn (show(muda_valor(read linhas :: Int)))
-    
-    --  Abre o arquivo e insere o valor lido incrementado
-    arqEscrita <- openFile "teste.txt" WriteMode
-
-    --  Converte o texto lido para Int, incrementa em 1 e converte pra String de novo e salva no arquivo de texto
-    hPutStrLn arqEscrita (show(muda_valor(read linhas :: Int)))
-    putStrLn "Escrita realizada com sucesso!\n"
-    hFlush arqEscrita   -- Liberando o buffer
-    hClose arqEscrita   -- Fechando o arquivo
 
 main :: IO ()
 main = do
@@ -166,10 +100,9 @@ main = do
 
   onClicked button1 (print(linhas))  -- Atribuindo função a um botão
   onClicked button2 (print"Funcionou")  -- Atribuindo função a um botão
-  onClicked button1 $ do
-    geraMatriz
-  onClicked button3 $ do
-              teste
+  --onClicked button1 $ do
+  --onClicked button3 $ do
+    --          teste
             --(print(removeIndiceLista 0 listaTeste))
 
   -- Add each button to the button box with the default packing and padding
@@ -194,19 +127,12 @@ main = do
   -- waits for an event to occur (like a key press or mouse event).
   mainGUI
 
-geraMatriz = do
-    print (linhas)
-    putStr "Digite o numero de linhas: "
-    linhas <- getLine
-    putStr "Digite o numero de colunas: "
-    colunas <- getLine
-    putStrLn (linhas++" "++colunas++"\n")
-    --limiteLinha <- ((read linhas :: Int) - 1)
-    --limiteColuna <- ((read colunas :: Int) - 1)
-    --return( array ((0,0),(limiteLinha, limiteColuna)) [((i,j), 0) | (i, j) <- range ((0,0), (limiteLinha, limiteColuna))])
+
+{-
+    FUNCIONALIDADES DO CAMPO MINADO
+-}
 
 -- função que prepara o início do jogo
---prepararJogo :: Jogadores -> IO Jogadores
 prepararJogo:: IO()
 prepararJogo = do
                system "clear"     -- no windows eh 'system "cls"'
@@ -229,6 +155,7 @@ prepararJogo = do
                executarJogada(campoMinado, read (linhas)::Int, read (colunas)::Int, minas, minas, qtdCelulasVazias)
                putStr ""   -- Se tirar causa erro de identação
 
+-- executarJogada : Exibe o mapa e instruções pra executar a jogada
 executarJogada::([Celula], Int, Int, Int, Int, Int) -> IO()
 executarJogada(mapa, linhas, colunas, minasMapa, minasJogador, qtdCelulasVazias) = do
                       printMapa(linhas, colunas, minasMapa, minasJogador, mapa, qtdCelulasVazias)
@@ -239,10 +166,9 @@ executarJogada(mapa, linhas, colunas, minasMapa, minasJogador, qtdCelulasVazias)
                       putStr("Digite sua jogada: ")
                       jogada <- getLine
                       tratarJogada(jogada, linhas, colunas, minas, minasJogador, mapa, qtdCelulasVazias)
-                      --tratarJogada("")
                       putStr("")
 
--- terminoPartida : Solicitar se ele quer jogar de novo
+-- terminoPartida : Solicitar ao jogador se ele quer jogar de novo
 terminaPartida:: IO ()
 terminaPartida = do
                  putStr "Deseja jogar novamente('S'/'s','N'/'n'): "
@@ -309,15 +235,15 @@ tratarJogada(jogada, linhas, colunas, minasMapa, minasJogador, mapa, qtdCelulasV
                                   getChar -- descarta o Enter
                                   terminaPartida
                                 else do                       -- Jogada válida
-                                  if(qtdCelulasVazias > 0)
+                                  if(qtdCelulasVazias > 1)
                                     then do
                                       mapa <- (atualizaMapa(mapa, [], celulaMapa, linhas, colunas, minasMapa, minasJogador, (qtdCelulasVazias - 1), 0))
                                       executarJogada(mapa, linhas, colunas, minasMapa, minasJogador, (qtdCelulasVazias - 1))
-                                      --mapa <- atualizaMapa(mapa, mapaAtualizado,  linhas, colunas, minasMapa, minasJogador, qtdCelulasVazias, codLinha, codColuna, status)
                                     else do                   -- VITORIA
+                                      mapa <- (atualizaMapa(mapa, [], celulaMapa, linhas, colunas, minasMapa, minasJogador, (qtdCelulasVazias - 1), 0))
                                       mapa <- (revelarMapa(mapa, [], linhas, colunas, minasMapa, minasJogador, qtdCelulasVazias))
                                       printMapa(linhas, colunas, minasMapa, minasJogador, mapa, qtdCelulasVazias)
-                                      putStrLn("\n\n \t \t Você venceu, parabéns!!!!")
+                                      putStrLn("\n\n \t \tVocê venceu, parabéns!!!!")
                                       putStrLn("\t \tVocê venceu, parabéns!!!! \n\n")
                                       putStrLn("Pressione ENTER pra continuar!")
                                       getChar -- descarta o Enter
@@ -606,22 +532,8 @@ montarMapa::(Int, Int, Int, Int) -> IO [Celula]
 montarMapa(linhas, colunas, minas, qtdCelulasVazias) = do
                    putStrLn "montar Mapa:"
                    let mapa = [(Celula "*" r c False False False 0) | r <- [0..(linhas - 1)] , c <- [0..(colunas - 1)]]--let mapa = [(Celula "*" x y False False False 0)];
-                   --print(show(length(mapa))++ " --  elementos na matriz.")
                    mapa <- posicionarMinas(0, (linhas*colunas), 0, minas, [], mapa, [])
-                   -- Teste posicionamento de minas:    mapa <- posicionarMinas(0, (x*y), 0, z, [1,2,3,4,6,9], mapa, [])
-                   --print(retornaVizinhos(0, (retornaCelulaPelaMatriz(0,0,mapa)), x, y, mapa, 0))
-                   --print(mapa)
-                   {-aux <- retornaVizinhos(0, (retornaCelulaPelaMatriz(0,0,mapa)), x, y, mapa, 0)
-                   putStrLn("0,0: "++show(aux))
-                   aux <- retornaVizinhos(0, (retornaCelulaPelaMatriz(1,1,mapa)), x, y, mapa, 0)
-                   putStrLn("1,1: "++show(aux))
-                   aux <- retornaVizinhos(0, (retornaCelulaPelaMatriz(1,2,mapa)), x, y, mapa, 0)
-                   putStrLn("1,2: "++show(aux))-}
-                   --retornaVizinhos(opcao, cell, lins, cols, mapa, contador) =
                    mapa <- calculaVizinhos(0, (linhas*colunas), linhas, colunas, mapa, mapa, [])
-                   --print(mapa!!2)
-                   --print(retornaCelulaPelaMatriz(0,2,mapa))
-                   --mapa <- posicionarMinas(0, (x*y), 0, z, [1,4,7,12,13,17,18,19], mapa, [])
                    printMapa(linhas, colunas, minas, 0, mapa, qtdCelulasVazias)
                    return(mapa)   -- Retornando uma lista de células
 
@@ -633,6 +545,7 @@ printMapa(linhas, colunas, minasMapa, minasJogador, mapa, qtdCelulasVazias) = do
                        putStrLn "\n--------------------------------------------------------------------------\n"
                        forLoopPrintMapa(0, (linhas*colunas), linhas, colunas, 0, mapa)
                        putStr ("\n\t Minas do jogador: "++show(minasJogador))
+                       putStr ("\n\t Minas do campo: "++show(minasMapa))
                        putStr ("\n\t Celulas vazias: "++show(qtdCelulasVazias))
                        putStrLn "\n--------------------------------------------------------------------------\n"
 
@@ -768,6 +681,7 @@ calculaVizinhos(i, tamanho, lins, cols, ((Celula escrito idLinha idColuna fechad
                       print("FFFFF")
                       return(mapaAtualizado)
 
+-- Função auxiliar ao calculaVizinho, este retorna a soma dos vizinhos de uma determinada célula
 retornaVizinhos:: (Int, Celula, Int, Int, [Celula], Int) -> IO Int
 retornaVizinhos(opcao, cell, lins, cols, mapa, contador) = 
                 do
